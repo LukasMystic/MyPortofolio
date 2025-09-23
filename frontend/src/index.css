@@ -116,8 +116,36 @@ body,
  */
 .editor-container .ck-editor__editable_inline {
   min-height: 400px;
+  color: #1f2937; /* Ensures text is always dark */
+  background-color: #ffffff; /* Sets a permanent white background */
+  caret-color: #1f2937; /* Makes the blinking cursor visible on the white background */
+}
+
+/*
+ * --- [NEW] ---
+ * Rules to force the CKEditor UI (toolbar, buttons) to a light theme
+*/
+.ck.ck-toolbar {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+}
+.ck.ck-button__label {
   color: #1f2937;
 }
+.ck.ck-icon,
+.ck-button__arrow {
+  color: #1f2937;
+}
+.ck.ck-button:not(.ck-disabled):hover,
+a.ck.ck-button:not(.ck-disabled):hover {
+  background: #f3f4f6;
+}
+.ck.ck-button.ck-on,
+a.ck.ck-button.ck-on {
+  background: #e5e7eb;
+}
+/* --- [END NEW] --- */
+
 
 .ck-editor__editable_inline ol,
 .ck-editor__editable_inline ul {
@@ -153,3 +181,51 @@ main .space-y-10 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
 main .mt-10 {
   margin-top: 1.25rem;
 }
+
+/* ==========================================================================
+   CUSTOM STYLES FOR CKEDITOR RICH TEXT CONTENT (.prose)
+   ADD THIS TO THE BOTTOM OF YOUR index.css FILE
+   ========================================================================== */
+
+/* --- Tables --- */
+/* We use standard CSS for borders to ensure they override prose defaults */
+.project-content .prose table {
+  @apply w-full my-8 text-sm shadow-md rounded-lg;
+  border-collapse: collapse;
+  overflow: hidden; /* Ensures the border radius is applied to the table */
+}
+.project-content .prose thead {
+  @apply bg-slate-100;
+}
+.project-content .prose th,
+.project-content .prose td {
+  @apply p-4 text-left;
+  border: 1px solid #e2e8f0; /* slate-200 */
+}
+.project-content .prose th {
+  @apply font-semibold text-slate-800;
+}
+/* Dark mode styles for tables */
+.dark .project-content .prose thead {
+  @apply bg-slate-800;
+}
+.dark .project-content .prose th,
+.dark .project-content .prose td {
+  border-color: #334155; /* slate-700 */
+}
+.dark .project-content .prose th {
+  @apply text-slate-200;
+}
+
+
+/* --- Responsive Media Embeds (YouTube, Vimeo, etc.) --- */
+/* This creates a responsive container with a 16:9 aspect ratio */
+.project-content .prose figure.media {
+  @apply relative w-full overflow-hidden rounded-xl shadow-lg my-8;
+  padding-top: 56.25%; /* This percentage creates the 16:9 aspect ratio */
+}
+/* The iframe is positioned to fill the container perfectly */
+.project-content .prose figure.media iframe {
+  @apply absolute top-0 left-0 w-full h-full border-0;
+}
+

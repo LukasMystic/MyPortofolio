@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom';
 import ProjectForm from '../components/ProjectForm';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+// Get the base API URL from Vite's environment variables.
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
 // Section header
 const AdminSectionHeader = ({ title, description }) => (
   <div className="mb-6">
@@ -44,8 +47,8 @@ const AdminPage = () => {
       try {
         setLoading(true);
         const [projectsRes, messagesRes] = await Promise.all([
-          axios.get('/api/projects'),
-          axios.get('/api/contact'),
+          axios.get(`${API_BASE_URL}/api/projects`),
+          axios.get(`${API_BASE_URL}/api/contact`),
         ]);
         setProjects(projectsRes.data);
         setMessages(messagesRes.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
@@ -66,7 +69,7 @@ const AdminPage = () => {
   const handleDeleteProject = async (id) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
       try {
-        await axios.delete(`/api/projects/${id}`);
+        await axios.delete(`${API_BASE_URL}/api/projects/${id}`);
         setProjects(projects.filter((p) => p._id !== id));
       } catch (err) {
         setError('Failed to delete project.');
@@ -76,7 +79,7 @@ const AdminPage = () => {
 
   const handleToggleFeatured = async (id, currentStatus) => {
     try {
-      await axios.put(`/api/projects/${id}/toggle-featured`);
+      await axios.put(`${API_BASE_URL}/api/projects/${id}/toggle-featured`);
       setProjects(projects.map((p) => (p._id === id ? { ...p, isFeatured: !currentStatus } : p)));
     } catch (err) {
       setError('Failed to update featured status.');
@@ -86,7 +89,7 @@ const AdminPage = () => {
   const handleDeleteMessage = async (id) => {
     if (window.confirm('Are you sure you want to delete this message?')) {
       try {
-        await axios.delete(`/api/contact/${id}`);
+        await axios.delete(`${API_BASE_URL}/api/contact/${id}`);
         setMessages(messages.filter((m) => m._id !== id));
       } catch (err) {
         setError('Failed to delete message.');

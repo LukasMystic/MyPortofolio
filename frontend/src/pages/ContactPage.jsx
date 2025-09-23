@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useTranslation } from '../context/TranslationContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import SEO from '../components/SEO';
+
+// Get the base API URL from Vite's environment variables.
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const contactContent = {
   en: {
@@ -18,7 +22,7 @@ const contactContent = {
   },
 };
 
-// Enhanced reveal animation with multiple effects
+// ... (Keep the Reveal, FloatingParticles, and other helper components as they are)
 const Reveal = ({ children, delay = 0, className = '', animation = 'slideUp' }) => {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -58,7 +62,6 @@ const Reveal = ({ children, delay = 0, className = '', animation = 'slideUp' }) 
   );
 };
 
-// Floating particles background
 const FloatingParticles = () => {
   const particles = Array.from({ length: 20 }, (_, i) => ({
     id: i,
@@ -89,7 +92,6 @@ const FloatingParticles = () => {
   );
 };
 
-// Animated gradient mesh background
 const AnimatedBackground = () => (
   <div className="fixed inset-0 pointer-events-none">
     <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 animate-gradient-shift" />
@@ -100,7 +102,6 @@ const AnimatedBackground = () => (
   </div>
 );
 
-// Contact info card component
 const ContactInfoCard = ({ icon, title, content, delay }) => (
   <Reveal delay={delay} animation="slideLeft">
     <div className="group relative overflow-hidden rounded-xl border bg-white/80 backdrop-blur-sm p-6 shadow-md hover:shadow-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-900/70 hover:scale-[1.02] hover:-translate-y-1">
@@ -122,7 +123,6 @@ const ContactInfoCard = ({ icon, title, content, delay }) => (
   </Reveal>
 );
 
-// Enhanced input component
 const AnimatedInput = ({ label, type = 'text', name, value, onChange, required = false, rows, delay = 0 }) => {
   const [focused, setFocused] = useState(false);
   const [hasValue, setHasValue] = useState(false);
@@ -172,7 +172,6 @@ const AnimatedInput = ({ label, type = 'text', name, value, onChange, required =
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
         
-        {/* Animated border effect */}
         <div className={`
           absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-400 
           transition-all duration-300 transform origin-left
@@ -183,28 +182,16 @@ const AnimatedInput = ({ label, type = 'text', name, value, onChange, required =
   );
 };
 
+
 const ContactPage = () => {
-  const { language, translateText, isTranslating } = useTranslation();
-  const [t, setT] = useState(contactContent.en);
+  // Removed 'translateText' as it's not provided by the context
+  const { isTranslating, content } = useTranslation();
+  // Static text is always in English now, simplifying the logic
+  const t = contactContent.en;
   const [formData, setFormData] = useState({ name: '', email: '', message: '', honeypot: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [responseMessage, setResponseMessage] = useState('');
   const [responseType, setResponseType] = useState('');
-
-  useEffect(() => {
-    if (language === 'en') {
-      setT(contactContent.en);
-    } else {
-      const translateContent = async () => {
-        const newT = {};
-        for (const key in contactContent.en) {
-          newT[key] = await translateText(contactContent.en[key], language);
-        }
-        setT(newT);
-      };
-      translateContent();
-    }
-  }, [language, translateText]);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -214,22 +201,26 @@ const ContactPage = () => {
     setResponseMessage('');
     
     try {
-      const { data } = await axios.post('/api/contact', formData);
-      const translatedSuccess = await translateText(data.message, language);
-      setResponseMessage(translatedSuccess);
+      // Use the API_BASE_URL for the API call
+      const { data } = await axios.post(`${API_BASE_URL}/api/contact`, formData);
+      // Display the success message directly from the API response
+      setResponseMessage(data.message);
       setResponseType('success');
       setFormData({ name: '', email: '', message: '', honeypot: '' });
     } catch (err) {
       const serverError = err.response?.data?.message || 'An error occurred. Please try again.';
-      const translatedError = await translateText(serverError, language);
-      setResponseMessage(translatedError);
+      // Display the error message directly from the API response
+      setResponseMessage(serverError);
       setResponseType('error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isTranslating && language !== 'en') {
+  const seoTitle = `Contact | ${content?.cv?.fullName || 'Portfolio'}`;
+  const seoDescription = `Get in touch with ${content?.cv?.fullName || ''}. Send a message directly through the contact form.`;
+
+  if (isTranslating) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <LoadingSpinner />
@@ -239,26 +230,20 @@ const ContactPage = () => {
 
   return (
     <div className="relative min-h-screen">
+      <SEO
+        title={seoTitle}
+        description={seoDescription}
+        name={content?.cv?.fullName}
+        type="website"
+        url="https://stanleypt.vercel.app/contact"
+      />
+
       <style dangerouslySetInnerHTML={{
         __html: `
-          @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            33% { transform: translateY(-10px) rotate(1deg); }
-            66% { transform: translateY(5px) rotate(-1deg); }
-          }
-          @keyframes blob {
-            0%, 100% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-          }
-          @keyframes gradient-shift {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-          }
-          @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
-            50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.6); }
-          }
+          @keyframes float { 0%, 100% { transform: translateY(0px) rotate(0deg); } 33% { transform: translateY(-10px) rotate(1deg); } 66% { transform: translateY(5px) rotate(-1deg); } }
+          @keyframes blob { 0%, 100% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(30px, -50px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } }
+          @keyframes gradient-shift { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+          @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); } 50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.6); } }
           .animate-float { animation: float ease-in-out infinite; }
           .animate-blob { animation: blob 7s ease-in-out infinite; }
           .animate-gradient-shift { animation: gradient-shift 4s ease-in-out infinite; }
@@ -273,7 +258,6 @@ const ContactPage = () => {
       <FloatingParticles />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-        {/* Hero Section */}
         <div className="text-center mb-12">
           <Reveal animation="slideUp">
             <div className="inline-flex items-center gap-2 mb-4">
@@ -283,32 +267,27 @@ const ContactPage = () => {
               </span>
             </div>
           </Reveal>
-          
           <Reveal animation="fadeIn" delay={100}>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-tight dark:text-slate-100 mb-6 bg-gradient-to-r from-slate-900 via-blue-800 to-slate-900 dark:from-slate-100 dark:via-cyan-300 dark:to-slate-100 bg-clip-text text-transparent">
               {t.title}
             </h1>
           </Reveal>
-          
           <Reveal animation="slideUp" delay={200}>
             <p className="text-xl md:text-2xl text-blue-600 dark:text-cyan-400 font-semibold mb-4">
               {t.subtitle}
             </p>
           </Reveal>
-          
           <Reveal animation="fadeIn" delay={300}>
             <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
               {t.description}
             </p>
           </Reveal>
-          
           <Reveal animation="slideUp" delay={400}>
             <div className="mt-6 h-1.5 w-28 mx-auto rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 animate-pulse" />
           </Reveal>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
-          {/* Contact Information */}
           <div className="lg:col-span-1">
             <Reveal animation="slideRight">
               <div className="mb-8">
@@ -320,152 +299,58 @@ const ContactPage = () => {
                 </p>
               </div>
             </Reveal>
-
             <div className="space-y-6">
               <ContactInfoCard
                 delay={100}
-                icon={
-                  <svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                }
+                icon={<svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
                 title="Email"
                 content="Let's discuss your project"
               />
-              
               <ContactInfoCard
                 delay={200}
-                icon={
-                  <svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                }
+                icon={<svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
                 title="Location"
                 content="Available for remote work"
               />
-              
               <ContactInfoCard
                 delay={300}
-                icon={
-                  <svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                }
+                icon={<svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
                 title="Response Time"
                 content="Within 24 hours"
               />
             </div>
-
-            
           </div>
 
-          {/* Contact Form */}
           <div className="lg:col-span-2">
             <Reveal animation="slideLeft">
               <div className="relative overflow-hidden rounded-3xl border bg-white/80 backdrop-blur-xl shadow-2xl dark:border-slate-800/50 dark:bg-slate-900/80 p-8 md:p-10">
                 <div className="absolute inset-0 opacity-60 bg-[radial-gradient(800px_400px_at_0%_0%,rgba(59,130,246,0.1),transparent_50%),radial-gradient(600px_300px_at_100%_100%,rgba(34,211,238,0.1),transparent_50%)]" />
-                
                 <div className="relative z-10">
                   {responseMessage && (
                     <Reveal animation="slideUp">
-                      <div
-                        className={`p-4 rounded-xl mb-6 text-center backdrop-blur-sm border ${
-                          responseType === 'success'
-                            ? 'bg-emerald-100/80 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800/50'
-                            : 'bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-800/50'
-                        }`}
-                      >
+                      <div className={`p-4 rounded-xl mb-6 text-center backdrop-blur-sm border ${responseType === 'success' ? 'bg-emerald-100/80 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800/50' : 'bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-800/50'}`}>
                         <div className="flex items-center justify-center gap-2">
-                          {responseType === 'success' ? (
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : (
-                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          )}
+                          {responseType === 'success' ? <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> : <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>}
                           {responseMessage}
                         </div>
                       </div>
                     </Reveal>
                   )}
-
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <AnimatedInput
-                        label={t.nameLabel}
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        delay={0}
-                      />
-                      <AnimatedInput
-                        label={t.emailLabel}
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        delay={100}
-                      />
+                      <AnimatedInput label={t.nameLabel} name="name" value={formData.name} onChange={handleChange} required delay={0} />
+                      <AnimatedInput label={t.emailLabel} type="email" name="email" value={formData.email} onChange={handleChange} required delay={100} />
                     </div>
-
-                    <AnimatedInput
-                      label={t.messageLabel}
-                      type="textarea"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                      rows={6}
-                      delay={200}
-                    />
-
-                    {/* Honeypot field */}
+                    <AnimatedInput label={t.messageLabel} type="textarea" name="message" value={formData.message} onChange={handleChange} required rows={6} delay={200} />
                     <div className="hidden" aria-hidden="true">
                       <label htmlFor="honeypot">Bot trap:</label>
-                      <input
-                        type="text"
-                        name="honeypot"
-                        id="honeypot"
-                        value={formData.honeypot}
-                        onChange={handleChange}
-                        tabIndex="-1"
-                        autoComplete="off"
-                      />
+                      <input type="text" name="honeypot" id="honeypot" value={formData.honeypot} onChange={handleChange} tabIndex="-1" autoComplete="off" />
                     </div>
-
                     <Reveal delay={300} animation="slideUp">
                       <div className="text-center pt-4">
-                        <button
-                          type="submit"
-                          disabled={isSubmitting}
-                          className={`
-                            group relative inline-flex items-center gap-3 rounded-full text-white px-8 py-4 font-bold shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden
-                            ${isSubmitting 
-                              ? 'bg-gradient-to-r from-slate-400 to-slate-500 cursor-not-allowed' 
-                              : 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:scale-105 hover:-translate-y-1'
-                            }
-                          `}
-                        >
+                        <button type="submit" disabled={isSubmitting} className={`group relative inline-flex items-center gap-3 rounded-full text-white px-8 py-4 font-bold shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden ${isSubmitting ? 'bg-gradient-to-r from-slate-400 to-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:scale-105 hover:-translate-y-1'}`}>
                           <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          
-                          {isSubmitting ? (
-                            <>
-                              <div className="relative z-10 h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                              <span className="relative z-10">{t.submittingText}</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="relative z-10">{t.buttonText}</span>
-                              <svg className="relative z-10 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </>
-                          )}
+                          {isSubmitting ? (<><div className="relative z-10 h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /><span className="relative z-10">{t.submittingText}</span></>) : (<><span className="relative z-10">{t.buttonText}</span><svg className="relative z-10 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></>)}
                         </button>
                       </div>
                     </Reveal>
@@ -481,3 +366,4 @@ const ContactPage = () => {
 };
 
 export default ContactPage;
+

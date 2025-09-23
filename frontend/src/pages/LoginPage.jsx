@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+// Get the base API URL from Vite's environment variables.
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
 const LoginPage = ({ setAuth }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +17,9 @@ const LoginPage = ({ setAuth }) => {
     setIsSubmitting(true);
     setError('');
     try {
-      const { data } = await axios.post('/api/auth/login', { email, password });
+      // Use the API_BASE_URL to construct the full request URL.
+      const { data } = await axios.post(`${API_BASE_URL}/api/auth/login`, { email, password });
+      
       localStorage.setItem('authToken', data.token);
       setAuth(true);
       navigate('/admin');

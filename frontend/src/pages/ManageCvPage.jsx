@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+// Get the base API URL from Vite's environment variables.
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
 // --- A Reusable Modal Component with Your Styling ---
 const Modal = ({ children, onClose }) => (
   <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
@@ -47,7 +50,7 @@ const ManageCvPage = () => {
 
   const fetchCvData = async () => {
     try {
-      const { data } = await axios.get('/api/cv');
+      const { data } = await axios.get(`${API_BASE_URL}/api/cv`);
       setCvData(data);
     } catch (err) { setError('Failed to load CV data.'); } 
     finally { setLoading(false); }
@@ -69,7 +72,7 @@ const ManageCvPage = () => {
     e.preventDefault();
     setIsSubmitting(true);
     const isEditing = !!item._id;
-    const url = isEditing ? `/api/cv/${endpoint}/${item._id}` : `/api/cv/${endpoint}`;
+    const url = isEditing ? `${API_BASE_URL}/api/cv/${endpoint}/${item._id}` : `${API_BASE_URL}/api/cv/${endpoint}`;
     const method = isEditing ? 'put' : 'post';
     try {
       await axios[method](url, item);
@@ -83,7 +86,7 @@ const ManageCvPage = () => {
   const handleItemDelete = async (endpoint, id, itemName) => {
     if (window.confirm(`Are you sure you want to delete this ${itemName}?`)) {
       try {
-        await axios.delete(`/api/cv/${endpoint}/${id}`);
+        await axios.delete(`${API_BASE_URL}/api/cv/${endpoint}/${id}`);
         await fetchCvData();
         showNotification(`${itemName} deleted successfully!`, 'success');
       } catch (err) { showNotification(`Failed to delete ${itemName}`, 'error'); }
@@ -95,7 +98,7 @@ const ManageCvPage = () => {
       setIsSubmitting(true);
       try {
           const { fullName, email, phone, linkedIn, github, aboutMe } = cvData;
-          await axios.put('/api/cv', { fullName, email, phone, linkedIn, github, aboutMe });
+          await axios.put(`${API_BASE_URL}/api/cv`, { fullName, email, phone, linkedIn, github, aboutMe });
           showNotification('Main details updated successfully!', 'success');
       } catch (err) { showNotification('Failed to update main details.', 'error'); } 
       finally { setIsSubmitting(false); }
@@ -108,7 +111,7 @@ const ManageCvPage = () => {
         reader.readAsDataURL(file);
         reader.onloadend = async () => {
             try {
-                await axios.put('/api/cv/profile-picture', { image: reader.result });
+                await axios.put(`${API_BASE_URL}/api/cv/profile-picture`, { image: reader.result });
                 await fetchCvData();
                 showNotification('Profile picture updated!', 'success');
             } catch (err) { showNotification('Failed to upload profile picture.', 'error'); }
@@ -121,7 +124,7 @@ const ManageCvPage = () => {
     const category = e.target.elements.category.value.trim();
     if (!category) return;
     try {
-        await axios.post('/api/cv/skills/category', { category });
+        await axios.post(`${API_BASE_URL}/api/cv/skills/category`, { category });
         e.target.reset();
         await fetchCvData();
         showNotification('Skill category added!', 'success');
@@ -133,7 +136,7 @@ const ManageCvPage = () => {
     const item = e.target.elements.skill.value.trim();
     if (!item) return;
     try {
-      await axios.post(`/api/cv/skills/${categoryId}`, { item });
+      await axios.post(`${API_BASE_URL}/api/cv/skills/${categoryId}`, { item });
       e.target.reset();
       await fetchCvData();
     } catch (err) { showNotification('Failed to add skill.', 'error'); }
@@ -142,7 +145,7 @@ const ManageCvPage = () => {
   const handleDeleteSkill = async (categoryId, itemIndex) => {
     if (window.confirm('Are you sure you want to delete this skill?')) {
         try {
-            await axios.delete(`/api/cv/skills/${categoryId}/${itemIndex}`);
+            await axios.delete(`${API_BASE_URL}/api/cv/skills/${categoryId}/${itemIndex}`);
             await fetchCvData();
         } catch (err) { showNotification('Failed to delete skill.', 'error'); }
     }
@@ -209,4 +212,3 @@ const ManageCvPage = () => {
 };
 
 export default ManageCvPage;
-
