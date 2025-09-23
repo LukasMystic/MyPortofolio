@@ -26,7 +26,7 @@ const app = express();
 
 // 1. Define the list of allowed origins (your frontends)
 const allowedOrigins = [
-  'http://localhost:5173',
+  'http://localhost:5173/',
   'https://stanleypt.vercel.app'
 ];
 
