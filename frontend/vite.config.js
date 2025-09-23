@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://portofoliobackend.vercel.app/', 
+        target: 'https://portofoliobackend.vercel.app', 
         changeOrigin: true,
       },
     },
