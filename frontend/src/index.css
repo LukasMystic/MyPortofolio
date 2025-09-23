@@ -1,0 +1,155 @@
+/* ==========================================================================
+   1. TAILWIND & BASE IMPORTS
+   ========================================================================== */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   2. GLOBAL LAYOUT & THEME VARIABLES
+   ========================================================================== */
+
+:root {
+  /* Site Backgrounds */
+  --bg-color-light: #f9fafb;
+  --bg-color-dark: #0b1220;
+
+  /* Custom Scrollbar Colors */
+  --scrollbar-thumb-start: #2563eb;
+  --scrollbar-thumb-end: #06b6d4;
+  --scrollbar-thumb-hover-start: #1d4ed8;
+  --scrollbar-thumb-hover-end: #0891b2;
+}
+
+html {
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-color-light);
+}
+
+.dark html {
+  background-color: var(--bg-color-dark);
+}
+
+/* FINAL FIX: Removed overflow-x: hidden to allow sticky header */
+body,
+#root {
+  min-height: 100%;
+  width: 100%;
+}
+
+/* ==========================================================================
+   3. CUSTOM STYLED COMPONENTS
+   ========================================================================== */
+
+/**
+ * Custom Scrollbar
+ */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--scrollbar-thumb-start), var(--scrollbar-thumb-end));
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-end));
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb-start) transparent;
+}
+
+/**
+ * Animated Background Blobs
+ */
+@keyframes floatBlobs {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(12px, -10px); }
+}
+
+.bg-animated {
+  position: relative;
+  /* overflow: hidden; is now handled inside App.jsx */
+}
+
+.bg-animated::before,
+.bg-animated::after {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 9999px;
+  filter: blur(60px);
+  z-index: -1;
+  animation: floatBlobs 12s ease-in-out infinite;
+}
+
+.bg-animated::before {
+  top: -80px;
+  left: -60px;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.bg-animated::after {
+  bottom: -80px;
+  right: -60px;
+  background: rgba(34, 211, 238, 0.15);
+  animation-delay: 3s;
+}
+
+.dark .bg-animated::before {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.dark .bg-animated::after {
+  background: rgba(34, 211, 238, 0.12);
+}
+
+/**
+ * CKEditor Rich Text Editor Styles
+ */
+.editor-container .ck-editor__editable_inline {
+  min-height: 400px;
+  color: #1f2937;
+}
+
+.ck-editor__editable_inline ol,
+.ck-editor__editable_inline ul {
+  list-style: revert;
+  padding-left: revert;
+  margin-left: revert;
+}
+
+/* ==========================================================================
+   4. SPACING OVERRIDES (DEVELOPER NOTE)
+   ========================================================================== */
+
+main {
+  padding-top: 1rem;
+  padding-bottom: 0;
+}
+
+main section {
+  margin-bottom: 0;
+}
+main section + section {
+  margin-top: 1.25rem;
+}
+
+main .py-8 { padding-top: 1rem; padding-bottom: 1rem; }
+main .py-10 { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+main .md\:py-12 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+main .md\:py-14 { padding-top: 1.75rem; padding-bottom: 1.75rem; }
+
+main .space-y-12 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
+main .space-y-10 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
+
+main .mt-10 {
+  margin-top: 1.25rem;
+}
