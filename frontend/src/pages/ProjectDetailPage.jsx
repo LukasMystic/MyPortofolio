@@ -2,8 +2,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useTranslation } from '../context/TranslationContext';
+import SEO from '../components/SEO'; // <-- 1. IMPORT SEO COMPONENT
 
-// Enhanced reveal animation with multiple effects
+
 const Reveal = ({ children, delay = 0, className = '', animation = 'slideUp' }) => {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -111,14 +112,12 @@ const HeroImage = ({ src, alt, title }) => {
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-transparent to-cyan-500/20" />
       
-      {/* Floating overlay elements */}
       <div className="absolute top-6 right-6 w-16 h-16 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl flex items-center justify-center animate-float">
         <svg className="w-8 h-8 text-white/80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M15 3h6v6M21 3l-7 7M13 3H8a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
       
-      {/* Title overlay */}
       <div className="absolute bottom-6 left-6 right-6">
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-2xl">
           {title}
@@ -145,12 +144,10 @@ const BackButton = ({ onClick }) => (
 );
 
 // Enhanced project metadata
-// Enhanced project metadata (cleaned)
 const ProjectMeta = ({ project }) => (
   <div className="flex flex-wrap items-center gap-3 mb-6">
     <Reveal delay={200} animation="slideLeft">
       <span className="inline-flex items-center gap-2 rounded-full border border-blue-200/50 bg-blue-50/80 px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm dark:border-blue-800/50 dark:bg-blue-900/40 dark:text-blue-300">
-        {/* New calendar icon */}
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" strokeWidth="2" />
           <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" />
@@ -179,11 +176,7 @@ const RelatedProjectCard = ({ project, index }) => (
           className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1" 
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-70 group-hover:opacity-80 transition-opacity duration-300" />
-        
-        {/* Hover overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-cyan-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        {/* View project icon */}
         <div className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0">
           <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M15 3h6v6M21 3l-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -234,6 +227,7 @@ const ActionButtons = () => (
   </div>
 );
 
+
 const ProjectDetailPage = () => {
   const { content, isTranslating } = useTranslation();
   const { id } = useParams();
@@ -274,8 +268,23 @@ const ProjectDetailPage = () => {
     );
   }
 
+  // <-- 2. PREPARE DYNAMIC SEO DATA
+  const plainShortDescription = (project.shortDescription || '').replace(/<[^>]*>?/gm, '');
+  const siteUrl = `https://stanleypt.vercel.app/project/${project._id}`;
+
   return (
     <div className="relative min-h-screen">
+       {/* 3. ADD THE SEO COMPONENT WITH PROJECT-SPECIFIC DATA */}
+      <SEO
+        title={`${project.title} | ${content.cv.fullName}`}
+        description={plainShortDescription}
+        name={content.cv.fullName}
+        type="article" 
+        url={siteUrl}
+        imageUrl={project.thumbnailUrl}
+        author={content.cv.fullName}
+      />
+
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes float {
@@ -305,27 +314,21 @@ const ProjectDetailPage = () => {
       <FloatingParticles />
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-12">
-        {/* Back Button */}
         <div className="mb-6">
           <BackButton onClick={() => window.history.back()} />
         </div>
-
-        {/* Main Content Card */}
+        
         <Reveal delay={100} animation="zoomIn">
           <article className="overflow-hidden rounded-3xl border border-slate-200/50 bg-white/80 backdrop-blur-xl shadow-2xl dark:border-slate-800/50 dark:bg-slate-900/80">
-            {/* Hero Image */}
             <HeroImage 
               src={project.thumbnailUrl} 
               alt={project.title} 
               title={project.title}
             />
             
-            {/* Content */}
             <div className="p-6 sm:p-8 md:p-10">
-              {/* Project Metadata */}
               <ProjectMeta project={project} />
               
-              {/* Project Description */}
               <Reveal delay={300} animation="fadeIn">
                 <div
                   className="prose prose-lg max-w-none text-slate-700 dark:prose-invert dark:text-slate-300 leading-relaxed"
@@ -333,13 +336,11 @@ const ProjectDetailPage = () => {
                 />
               </Reveal>
 
-              {/* Action Buttons */}
               <ActionButtons />
             </div>
           </article>
         </Reveal>
 
-        {/* Related Projects */}
         {content.projects && content.projects.length > 1 && (
           <Reveal delay={400}>
             <section className="mt-12 sm:mt-16">
@@ -367,7 +368,6 @@ const ProjectDetailPage = () => {
           </Reveal>
         )}
 
-        {/* Call to Action */}
         <Reveal delay={600}>
           <section className="mt-16 text-center rounded-3xl border bg-gradient-to-br from-blue-600 via-cyan-500 to-emerald-500 p-8 md:p-12 shadow-2xl overflow-hidden relative">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><defs><pattern id=\'grid\' width=\'10\' height=\'10\' patternUnits=\'userSpaceOnUse\'><path d=\'M 10 0 L 0 0 0 10\' fill=\'none\' stroke=\'white\' stroke-opacity=\'0.1\' stroke-width=\'1\'/></pattern></defs><rect width=\'100\' height=\'100\' fill=\'url(%23grid)\'/></svg>')] opacity-20" />
@@ -390,7 +390,6 @@ const ProjectDetailPage = () => {
               </Link>
             </div>
             
-            {/* Floating elements */}
             <div className="absolute top-8 left-8 w-4 h-4 bg-white/20 rounded-full animate-float" />
             <div className="absolute top-16 right-16 w-6 h-6 bg-white/15 rounded-full animate-float animation-delay-2000" />
             <div className="absolute bottom-16 left-16 w-5 h-5 bg-white/25 rounded-full animate-float animation-delay-4000" />

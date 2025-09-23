@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Game from '../components/Game';
 import { useTranslation } from '../context/TranslationContext';
+import SEO from '../components/SEO'; // Import SEO component
 
 // Enhanced reveal animation with multiple effects
 const Reveal = ({ children, delay = 0, className = '', animation = 'slideUp' }) => {
@@ -114,7 +115,6 @@ const ExperienceCard = ({ exp, index }) => (
       <div className="absolute -top-2 -right-2 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700" />
       
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4">
-        {/* Added min-w-0 to the flex-1 container to prevent text overflow */}
         <div className="flex-1 min-w-0">
           <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-700 dark:group-hover:text-cyan-400 transition-colors">
             {exp.title}
@@ -131,7 +131,6 @@ const ExperienceCard = ({ exp, index }) => (
         {exp.responsibilities.map((res, i) => (
           <li key={i} className="flex items-start gap-2 text-sm">
             <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 mt-2" />
-            {/* Added break-words to handle long unbreakable strings */}
             <span className="break-words" dangerouslySetInnerHTML={{ __html: res }} />
           </li>
         ))}
@@ -208,7 +207,7 @@ const ProjectCard = ({ proj, index }) => (
       <div className="relative h-48 md:h-52 overflow-hidden">
         <img 
           src={proj.thumbnailUrl} 
-          alt={proj.title} 
+          alt={`Thumbnail for project: ${proj.title}`} 
           className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1" 
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
@@ -223,12 +222,12 @@ const ProjectCard = ({ proj, index }) => (
         <h3 className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors duration-300 dark:text-slate-100 dark:group-hover:text-cyan-400 text-lg mb-2">
           {proj.title}
         </h3>
-        {/* Added break-words to handle long unbreakable strings */}
         <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed break-words" dangerouslySetInnerHTML={{ __html: proj.shortDescription }} />
       </div>
     </Link>
   </Reveal>
 );
+
 
 const HomePage = () => {
   const { content, isTranslating } = useTranslation();
@@ -243,6 +242,25 @@ const HomePage = () => {
   }
 
   const { cv, featuredProjects } = content;
+  
+  // Prepare SEO data
+  const siteUrl = "https://stanleypt.vercel.app"; // <-- UPDATED DOMAIN
+  const plainAboutMe = (cv.aboutMe || '').replace(/<[^>]*>?/gm, ''); // Strip HTML for meta description
+  const seoKeywords = cv.skills.flatMap(cat => cat.items).join(', ');
+
+  const personSchema = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": cv.fullName,
+    "url": siteUrl,
+    "image": cv.profilePictureUrl,
+    "sameAs": [
+      cv.linkedIn,
+      cv.github
+    ],
+    "jobTitle": "Software Developer" 
+  };
+
   const parseEndDate = (range = '') => {
     if (/now/i.test(range)) return Number.MAX_SAFE_INTEGER;
     const parts = range.split('-').map((s) => s.trim());
@@ -256,6 +274,18 @@ const HomePage = () => {
 
   return (
     <div className="relative min-h-screen">
+      <SEO
+        title={`${cv.fullName} | Portfolio`}
+        description={plainAboutMe.substring(0, 160)}
+        name={cv.fullName}
+        type="website"
+        imageUrl={cv.profilePictureUrl}
+        url={siteUrl}
+        keywords={seoKeywords}
+        author={cv.fullName}
+        personSchema={personSchema}
+      />
+
       <style dangerouslySetInnerHTML={{
         __html: `
           @keyframes float {
@@ -283,16 +313,13 @@ const HomePage = () => {
 
       <AnimatedBackground />
       <FloatingParticles />
-
+      
       <div className="relative z-10 scroll-smooth container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-        {/* Hero Section - Enhanced */}
         <Reveal>
           <section className="relative overflow-hidden rounded-3xl border bg-white/80 backdrop-blur-xl shadow-2xl dark:border-slate-800/50 dark:bg-slate-900/80 mb-12">
             <div className="absolute inset-0 opacity-60 bg-[radial-gradient(1200px_600px_at_0%_0%,rgba(59,130,246,0.15),transparent_60%),radial-gradient(1000px_400px_at_100%_100%,rgba(34,211,238,0.15),transparent_60%)]" />
             
-            {/* Adjusted padding and gap for mobile */}
             <div className="relative grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8 p-6 sm:p-8 md:p-12 items-center">
-              {/* Profile Image - Enhanced & resized for mobile */}
               <Reveal delay={200} animation="bounce" className="order-1 lg:order-none lg:col-span-2 flex justify-center lg:justify-start">
                 <div className="relative group">
                   <div className="absolute -inset-2 rounded-full bg-gradient-to-tr from-blue-500 via-cyan-400 to-emerald-400 opacity-70 blur-lg group-hover:opacity-100 group-hover:blur-xl transition-all duration-700 animate-pulse" />
@@ -306,7 +333,6 @@ const HomePage = () => {
                 </div>
               </Reveal>
 
-              {/* Introduction - Enhanced */}
               <div className="lg:col-span-3 text-center lg:text-left">
                 <Reveal delay={100} animation="slideRight">
                   <p className="text-sm uppercase tracking-widest text-blue-600 font-bold mb-3 dark:text-cyan-400 animate-pulse">
@@ -326,7 +352,6 @@ const HomePage = () => {
                   </p>
                 </Reveal>
 
-                {/* CTA Buttons - Enhanced with responsive padding */}
                 <Reveal delay={500} animation="slideUp">
                   <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
                     <Link
@@ -349,7 +374,6 @@ const HomePage = () => {
                   </div>
                 </Reveal>
 
-                {/* Social Links - Enhanced */}
                 <Reveal delay={600} animation="bounce">
                   <div className="flex items-center justify-center lg:justify-start gap-4">
                     <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">Follow me:</span>
@@ -365,7 +389,6 @@ const HomePage = () => {
           </section>
         </Reveal>
 
-        {/* About Section - Enhanced with responsive padding and text size */}
         <Reveal delay={100}>
           <section className="mb-12 rounded-3xl border bg-white/85 backdrop-blur-xl p-6 sm:p-8 md:p-10 shadow-xl dark:border-slate-800/50 dark:bg-slate-900/80">
             <SectionHeader title="About Me" subtitle="My Story" anchor="about" />
@@ -373,7 +396,6 @@ const HomePage = () => {
           </section>
         </Reveal>
 
-        {/* Skills Section - Enhanced with responsive padding */}
         <Reveal delay={150}>
           <section id="skills" className="mb-12 rounded-3xl border bg-white/85 backdrop-blur-xl p-6 sm:p-8 md:p-10 shadow-xl dark:border-slate-800/50 dark:bg-slate-900/80">
             <SectionHeader title="Skills & Expertise" subtitle="My Toolbox" anchor="skills" />
@@ -390,12 +412,10 @@ const HomePage = () => {
           </section>
         </Reveal>
 
-        {/* Experience Section - Enhanced with responsive padding and layout */}
         <Reveal delay={220}>
           <section className="mb-12 rounded-3xl border bg-white/85 backdrop-blur-xl p-6 sm:p-8 md:p-10 shadow-xl dark:border-slate-800/50 dark:bg-slate-900/80">
             <SectionHeader title="Experience" subtitle="My Journey" anchor="experience" />
             
-            {/* Filter Buttons - Enhanced with responsive padding */}
             <div className="mb-8 flex flex-wrap justify-center gap-2 sm:gap-3">
               {['All', 'Work', 'Organization', 'Volunteer'].map((f) => (
                 <button
@@ -424,7 +444,6 @@ const HomePage = () => {
           </section>
         </Reveal>
 
-        {/* Featured Projects - Enhanced with responsive layout */}
         {featuredProjects.length > 0 && (
           <Reveal delay={350}>
             <section id="projects" className="mb-12 rounded-3xl border bg-white/85 backdrop-blur-xl p-6 sm:p-8 md:p-10 shadow-xl dark:border-slate-800/50 dark:bg-slate-900/80">
@@ -451,7 +470,6 @@ const HomePage = () => {
           </Reveal>
         )}
 
-        {/* Certifications - Enhanced with responsive layout */}
         <Reveal delay={420}>
           <section className="mb-12 rounded-3xl border bg-white/85 backdrop-blur-xl p-6 sm:p-8 md:p-10 shadow-xl dark:border-slate-800/50 dark:bg-slate-900/80">
             <SectionHeader title="Certifications" subtitle="My Credentials" anchor="certs" />
@@ -489,7 +507,6 @@ const HomePage = () => {
           </section>
         </Reveal>
 
-        {/* Mini Game Section - Enhanced */}
         <Reveal delay={480}>
           <section className="mb-12 rounded-3xl border bg-white/85 backdrop-blur-xl p-6 sm:p-8 md:p-10 shadow-xl dark:border-slate-800/50 dark:bg-slate-900/80">
             <SectionHeader title="Take a Break" subtitle="Mini Game" anchor="game" />
@@ -503,7 +520,6 @@ const HomePage = () => {
           </section>
         </Reveal>
 
-        {/* Call-to-Action Section */}
         <Reveal delay={550}>
           <section className="text-center rounded-3xl border bg-gradient-to-br from-blue-600 via-cyan-500 to-emerald-500 p-8 md:p-12 shadow-2xl overflow-hidden relative">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><defs><pattern id=\'grid\' width=\'10\' height=\'10\' patternUnits=\'userSpaceOnUse\'><path d=\'M 10 0 L 0 0 0 10\' fill=\'none\' stroke=\'white\' stroke-opacity=\'0.1\' stroke-width=\'1\'/></pattern></defs><rect width=\'100\' height=\'100\' fill=\'url(%23grid)\'/></svg>')] opacity-20" />
@@ -534,7 +550,6 @@ const HomePage = () => {
               </div>
             </div>
             
-            {/* Floating elements */}
             <div className="absolute top-10 left-10 w-4 h-4 bg-white/20 rounded-full animate-float" />
             <div className="absolute top-20 right-20 w-6 h-6 bg-white/15 rounded-full animate-float animation-delay-2000" />
             <div className="absolute bottom-20 left-20 w-5 h-5 bg-white/25 rounded-full animate-float animation-delay-4000" />
