@@ -211,11 +211,27 @@ const ProjectContent = ({ description }) => {
             });
         };
 
+        // --- NEW: Process ordered and unordered lists ---
+        const processLists = () => {
+            // Unordered lists (bullets)
+            const unorderedLists = contentRef.current.querySelectorAll('ul');
+            unorderedLists.forEach(ul => {
+                ul.classList.add('list-disc', 'list-inside', 'pl-5', 'space-y-2', 'my-4');
+            });
+
+            // Ordered lists (numbers)
+            const orderedLists = contentRef.current.querySelectorAll('ol');
+            orderedLists.forEach(ol => {
+                ol.classList.add('list-decimal', 'list-inside', 'pl-5', 'space-y-2', 'my-4');
+            });
+        };
+
         // --- Call all processing functions ---
         processMediaEmbeds();
         processTextAlignment();
         processImages();
         processTables();
+        processLists(); // <-- Added this call
 
     }, [description]);
 
