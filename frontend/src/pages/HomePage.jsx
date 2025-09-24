@@ -109,8 +109,8 @@ const SectionHeader = ({ title, subtitle, anchor }) => (
 );
 
 const ExperienceCard = ({ exp, index }) => (
-  <Reveal delay={index * 100} animation="slideUp">
-    <div className="group relative overflow-hidden rounded-xl border bg-white/80 backdrop-blur-sm p-6 shadow-md hover:shadow-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-900/70 hover:scale-[1.02] hover:-translate-y-1">
+   <Reveal delay={index * 100} animation="slideUp">
+    <div className="group relative overflow-hidden rounded-xl border bg-white/80 backdrop-blur-sm p-6 shadow-md hover:shadow-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-900/70 hover:scale-[1.02] hover:-translate-y-1 h-full flex flex-col">
       <div className="absolute inset-0 -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-tr from-blue-50 to-cyan-50 dark:from-slate-800/30 dark:to-slate-700/20" />
       <div className="absolute -top-2 -right-2 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700" />
       
@@ -392,7 +392,10 @@ const HomePage = () => {
         <Reveal delay={100}>
           <section className="mb-12 rounded-3xl border bg-white/85 backdrop-blur-xl p-6 sm:p-8 md:p-10 shadow-xl dark:border-slate-800/50 dark:bg-slate-900/80">
             <SectionHeader title="About Me" subtitle="My Story" anchor="about" />
-            <div className="prose prose-base md:prose-lg max-w-none text-slate-700 dark:prose-invert dark:text-slate-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: cv.aboutMe }} />
+            <div 
+              className="prose prose-base md:prose-lg max-w-none text-slate-700 dark:prose-invert dark:text-slate-300 leading-relaxed text-justify whitespace-pre-line" 
+              dangerouslySetInnerHTML={{ __html: cv.aboutMe }} 
+            />
           </section>
         </Reveal>
 
