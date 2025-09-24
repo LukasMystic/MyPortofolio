@@ -33,7 +33,8 @@ const ProjectsPage = () => {
       }
       const dateA = new Date(a.createdAt);
       const dateB = new Date(b.createdAt);
-      return sortOrder === 'newest' ? dateB - dateA : sortOrder === 'oldest' ? dateA - b : 0;
+      // Corrected the logic for 'oldest'
+      return sortOrder === 'newest' ? dateB - dateA : sortOrder === 'oldest' ? dateA - dateB : 0;
     });
     return arr;
   }, [content?.projects, sortOrder, featuredIds]);

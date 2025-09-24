@@ -249,6 +249,34 @@ const ProjectContent = ({ description }) => {
                 ol.classList.add('list-decimal', 'list-inside', 'pl-5', 'space-y-2', 'my-4');
             });
         };
+        // Put this inside the same useEffect where you already run processors
+const processLinks = () => {
+  if (!contentRef.current) return;
+  const isDark = document.documentElement.classList.contains('dark');
+  const linkColor = isDark ? '#22d3ee' : '#2563eb';   // cyan-400 when dark, blue-600 otherwise
+  const hoverColor = isDark ? '#06b6d4' : '#1d4ed8';  // cyan-500 / blue-700
+
+  const links = contentRef.current.querySelectorAll('a');
+  links.forEach(a => {
+    // make them open in new tab safely (optional but often desired)
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener noreferrer');
+
+    // remove any inline "color" styles that might conflict
+    a.style.removeProperty('color');
+
+    // force the visible hyperlink styles inline (these beat CSS specificity)
+    a.style.color = linkColor;
+    a.style.textDecoration = 'underline';
+    a.style.fontWeight = '600';
+    a.style.transition = 'color 0.15s ease-in-out';
+
+    // ensure hover color — use simple event handlers (safe and effective)
+    // remove duplicates if any (idempotent-ish)
+    a.onmouseenter = () => { a.style.color = hoverColor; };
+    a.onmouseleave = () => { a.style.color = linkColor; };
+  });
+};
 
         // --- Call all processing functions ---
         processMediaEmbeds();
@@ -256,6 +284,7 @@ const ProjectContent = ({ description }) => {
         processImagesAndCaptions(); // <-- Use the updated function name
         processTables();
         processLists(); 
+        processLinks();
 
     }, [description]);
 
@@ -267,18 +296,20 @@ const ProjectContent = ({ description }) => {
 
     return (
         <Reveal delay={200}>
-            <div
-                ref={contentRef}
-                className="project-content prose prose-lg max-w-none text-slate-700 dark:prose-invert dark:text-slate-300 leading-relaxed
-                           prose-headings:text-slate-800 dark:prose-headings:text-slate-100
-                           prose-a:text-blue-600 dark:prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline
-                           prose-strong:text-slate-800 dark:prose-strong:text-slate-100
-                           prose-code:text-slate-800 dark:prose-code:text-slate-100 prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-                           prose-pre:bg-slate-800 dark:prose-pre:bg-slate-900 prose-pre:text-slate-100
-                           prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-slate-800 prose-blockquote:px-4 prose-blockquote:py-2
-                           prose-img:rounded-lg prose-img:shadow-lg"
-                dangerouslySetInnerHTML={{ __html: description }}
-            />
+          <div
+  ref={contentRef}
+  className={
+    "project-content prose prose-lg max-w-none text-slate-700 dark:prose-invert dark:text-slate-300 leading-relaxed " +
+    "prose-headings:text-slate-800 dark:prose-headings:text-slate-100 " +
+    "prose-strong:text-slate-800 dark:prose-strong:text-slate-100 " +
+    "prose-code:text-slate-800 dark:prose-code:text-slate-100 prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded " +
+    "prose-pre:bg-slate-800 dark:prose-pre:bg-slate-900 prose-pre:text-slate-100 " +
+    "prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-slate-800 prose-blockquote:px-4 prose-blockquote:py-2 " +
+    "prose-img:rounded-lg prose-img:shadow-lg"
+  }
+  dangerouslySetInnerHTML={{ __html: description }}
+/>
+
         </Reveal>
     );
 };
