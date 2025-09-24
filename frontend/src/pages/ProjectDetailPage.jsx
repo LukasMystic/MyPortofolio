@@ -128,42 +128,75 @@ const ProjectContent = ({ description }) => {
         
         // --- MODIFIED: Process image alignment AND captions ---
         const processImagesAndCaptions = () => {
-            const figures = contentRef.current.querySelectorAll('figure.image');
-            figures.forEach(figure => {
-                // Image alignment logic (same as before)
-                figure.style.float = 'none';
-                figure.style.marginLeft = 'auto';
-                figure.style.marginRight = 'auto';
-                figure.style.display = 'block';
+  if (!contentRef.current) return;
 
-                if (figure.classList.contains('ck-align-center')) {
-                    figure.style.textAlign = 'center';
-                } else if (figure.classList.contains('ck-align-right')) {
-                    figure.style.float = 'right';
-                    figure.style.marginLeft = '1.5em';
-                    figure.style.marginRight = '0';
-                } else if (figure.classList.contains('ck-align-left')) {
-                    figure.style.float = 'left';
-                    figure.style.marginRight = '1.5em';
-                    figure.style.marginLeft = '0';
-                }
+  // 1) Wrap orphan <img> (p > img or direct img) into a <figure class="image"> if not wrapped
+  const orphanImgs = contentRef.current.querySelectorAll('p > img, .project-content.prose > img, .project-content img:not(figure img)');
+  orphanImgs.forEach(img => {
+    if (img.closest('figure')) return;
+    const p = img.closest('p');
+    // if it's inside a paragraph, move it to a new figure right after the paragraph
+    const wrapper = document.createElement('figure');
+    wrapper.className = 'image';
+    if (p) {
+      p.parentNode.insertBefore(wrapper, p.nextSibling);
+      wrapper.appendChild(img);
+      // remove empty paragraph if you want:
+      if (p.textContent.trim() === '') p.remove();
+    } else {
+      img.parentNode.insertBefore(wrapper, img);
+      wrapper.appendChild(img);
+    }
+  });
 
-                // --- NEW: Caption Styling Logic ---
-                // Find the figcaption element within the figure
-                const caption = figure.querySelector('figcaption');
-                if (caption) {
-                    // Apply Tailwind classes for styling the caption
-                    caption.classList.add(
-                        'text-center',      // Center the caption text
-                        'text-sm',          // Make the font size smaller
-                        'text-slate-500',   // Use a muted color for light mode
-                        'dark:text-slate-400', // Muted color for dark mode
-                        'mt-2',             // Add margin-top for spacing
-                        'italic'            // Italicize the text
-                    );
-                }
-            });
-        };
+  // 2) Force inline styles for every image inside contentRef to override anything else
+  const allImgs = contentRef.current.querySelectorAll('img');
+  allImgs.forEach(img => {
+    // remove only float declarations from style attr (keeps widths etc)
+    const rawStyle = img.getAttribute('style') || '';
+    const cleanedStyle = rawStyle.replace(/(?:^|;)\s*float\s*:\s*(left|right|none)\s*;?/gi, '');
+    img.setAttribute('style', cleanedStyle);
+
+    // Now set the desired imperative styles (these are inline and will beat most conflicts)
+    img.style.display = 'block';
+    img.style.marginLeft = 'auto';
+    img.style.marginRight = 'auto';
+    img.style.float = 'none';
+    img.style.maxWidth = '100%';
+    img.style.width = img.getAttribute('width') ? img.getAttribute('width') + 'px' : 'auto';
+    img.style.clear = 'both';
+    img.style.verticalAlign = 'middle';
+
+    // remove deprecated align attributes if present
+    if (img.hasAttribute('align')) img.removeAttribute('align');
+  });
+
+  // 3) Style figcaptions (class additions already in your code, but keep inline fallback)
+  const figures = contentRef.current.querySelectorAll('figure.image');
+  figures.forEach(figure => {
+    const caption = figure.querySelector('figcaption');
+    if (caption) {
+      caption.classList.add(
+        'text-center',
+        'text-sm',
+        'text-slate-500',
+        'dark:text-slate-400',
+        'mt-2',
+        'italic'
+      );
+      // ensure inline too
+      caption.style.textAlign = 'center';
+      caption.style.marginTop = '0.5rem';
+      caption.style.fontStyle = 'italic';
+    }
+    // also ensure the figure block is centered
+    figure.style.display = 'block';
+    figure.style.textAlign = 'center';
+    figure.style.width = '100%';
+    figure.style.margin = '0 auto';
+  });
+};
+
 
         // Process tables and lists (no changes here)
         const processTables = () => {

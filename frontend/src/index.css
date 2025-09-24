@@ -229,3 +229,64 @@ main .mt-10 {
   @apply absolute top-0 left-0 w-full h-full border-0;
 }
 
+/* =============================
+   SUPER BRUTE-FORCE: center ANY CKEditor image
+   Put this at the very bottom of index.css
+   ============================= */
+
+/* Target all images, picture, figure combos inside project-content .prose */
+.project-content .prose img,
+.project-content .prose picture,
+.project-content .prose figure,
+.project-content .prose p > img,
+.project-content .prose a > img,
+.project-content .prose figure.image img,
+.project-content .prose .ck-align-center img,
+.project-content .prose img[align],
+.project-content .prose img[style*="float"] {
+  display: block !important;
+  float: none !important;            /* remove float if present inline or from classes */
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-top: 0 !important;
+  margin-bottom: 0.75rem !important; /* optional spacing */
+  max-width: 100% !important;
+  width: auto !important;
+  clear: both !important;
+  vertical-align: middle !important;
+}
+
+/* Ensure figures themselves center their content */
+.project-content .prose figure,
+.project-content .prose figure.image {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+  justify-content: center !important; /* in case some rule made it flex */
+  align-items: center !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+}
+
+/* Anchor-wrapped images */
+.project-content .prose a > img {
+  display: block !important;
+  margin: 0 auto !important;
+  float: none !important;
+}
+
+/* If CKEditor used classes like ck-align-left/right/center, normalize them */
+.project-content .prose .ck-align-left,
+.project-content .prose .ck-align-right,
+.project-content .prose .ck-align-center {
+  text-align: center !important;
+}
+
+/* figcaption style */
+.project-content .prose figure.image figcaption {
+  text-align: center !important;
+  margin-top: 0.5rem !important;
+  font-style: italic !important;
+  color: inherit !important;
+}
+
