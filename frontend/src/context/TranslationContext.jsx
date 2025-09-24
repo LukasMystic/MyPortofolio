@@ -32,7 +32,7 @@ export const TranslationProvider = ({ children }) => {
         const content = {
           cv: cvRes.data,
           projects: projectsRes.data,
-          featuredProjects: projectsRes.data.filter(p => p.isFeatured).slice(0, 5)
+          featuredProjects: projectsRes.data.filter(p => p.isFeatured).slice(0, 6)
         };
 
         // Store the original English content and cache it.
