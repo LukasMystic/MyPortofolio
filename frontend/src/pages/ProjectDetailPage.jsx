@@ -91,35 +91,24 @@ const ProjectContent = ({ description }) => {
     useEffect(() => {
         if (!contentRef.current) return;
 
-        // Process media embeds (YouTube, etc.)
+        // Process media embeds (YouTube, etc.) - no changes here
         const processMediaEmbeds = () => {
             const mediaElements = contentRef.current.querySelectorAll('oembed[url]');
-            
             mediaElements.forEach(embed => {
                 const url = embed.getAttribute('url');
-                
                 if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
                     const videoId = extractYouTubeId(url);
                     if (videoId) {
                         const iframe = document.createElement('div');
                         iframe.className = 'relative w-full aspect-video my-6 rounded-lg overflow-hidden shadow-lg';
-                        iframe.innerHTML = `
-                            <iframe 
-                                class="absolute inset-0 w-full h-full"
-                                src="https://www.youtube.com/embed/${videoId}" 
-                                title="YouTube video player" 
-                                frameborder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                allowfullscreen
-                            ></iframe>
-                        `;
+                        iframe.innerHTML = `<iframe class="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
                         embed.replaceWith(iframe);
                     }
                 }
             });
         };
 
-        // Process text alignment from CKEditor
+        // Process text alignment from CKEditor - no changes here
         const processTextAlignment = () => {
             const elementsWithStyles = contentRef.current.querySelectorAll('[style*="text-align"]');
             elementsWithStyles.forEach(element => {
@@ -131,19 +120,17 @@ const ProjectContent = ({ description }) => {
                     else if (style.includes('text-align: left')) element.classList.add('text-left');
                 }
             });
-
             const centerElements = contentRef.current.querySelectorAll('.ck-align-center');
             centerElements.forEach(el => el.classList.add('text-center'));
-
             const rightElements = contentRef.current.querySelectorAll('.ck-align-right');
             rightElements.forEach(el => el.classList.add('text-right'));
         };
         
-        // --- NEW: Process image alignment ---
-        const processImages = () => {
+        // --- MODIFIED: Process image alignment AND captions ---
+        const processImagesAndCaptions = () => {
             const figures = contentRef.current.querySelectorAll('figure.image');
             figures.forEach(figure => {
-                // Clear any existing floats and margins before applying new ones
+                // Image alignment logic (same as before)
                 figure.style.float = 'none';
                 figure.style.marginLeft = 'auto';
                 figure.style.marginRight = 'auto';
@@ -160,14 +147,28 @@ const ProjectContent = ({ description }) => {
                     figure.style.marginRight = '1.5em';
                     figure.style.marginLeft = '0';
                 }
+
+                // --- NEW: Caption Styling Logic ---
+                // Find the figcaption element within the figure
+                const caption = figure.querySelector('figcaption');
+                if (caption) {
+                    // Apply Tailwind classes for styling the caption
+                    caption.classList.add(
+                        'text-center',      // Center the caption text
+                        'text-sm',          // Make the font size smaller
+                        'text-slate-500',   // Use a muted color for light mode
+                        'dark:text-slate-400', // Muted color for dark mode
+                        'mt-2',             // Add margin-top for spacing
+                        'italic'            // Italicize the text
+                    );
+                }
             });
         };
 
-        // --- MODIFIED: Process tables for styling AND alignment ---
+        // Process tables and lists (no changes here)
         const processTables = () => {
             const tables = contentRef.current.querySelectorAll('table');
             tables.forEach(table => {
-                // --- Alignment Logic ---
                 const figure = table.closest('figure.table'); 
                 if (figure) {
                     if (figure.classList.contains('ck-align-center')) {
@@ -179,17 +180,13 @@ const ProjectContent = ({ description }) => {
                        figure.style.float = 'left';
                     }
                 }
-
-                // --- Styling Logic ---
                 if (!table.parentElement.classList.contains('table-container')) {
                     const wrapper = document.createElement('div');
                     wrapper.className = 'table-container overflow-x-auto my-6 rounded-lg border border-slate-200 dark:border-slate-700';
                     table.parentNode.insertBefore(wrapper, table);
                     wrapper.appendChild(table);
                 }
-                
                 table.className = 'min-w-full divide-y divide-slate-200 dark:divide-slate-700';
-                
                 const thead = table.querySelector('thead');
                 if (thead) {
                     thead.className = 'bg-slate-50 dark:bg-slate-800';
@@ -197,7 +194,6 @@ const ProjectContent = ({ description }) => {
                         th.className = 'px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider border border-slate-200 dark:border-slate-700';
                     });
                 }
-                
                 const tbody = table.querySelector('tbody');
                 if (tbody) {
                     tbody.className = 'bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700';
@@ -210,16 +206,11 @@ const ProjectContent = ({ description }) => {
                 }
             });
         };
-
-        // --- NEW: Process ordered and unordered lists ---
         const processLists = () => {
-            // Unordered lists (bullets)
             const unorderedLists = contentRef.current.querySelectorAll('ul');
             unorderedLists.forEach(ul => {
                 ul.classList.add('list-disc', 'list-inside', 'pl-5', 'space-y-2', 'my-4');
             });
-
-            // Ordered lists (numbers)
             const orderedLists = contentRef.current.querySelectorAll('ol');
             orderedLists.forEach(ol => {
                 ol.classList.add('list-decimal', 'list-inside', 'pl-5', 'space-y-2', 'my-4');
@@ -229,9 +220,9 @@ const ProjectContent = ({ description }) => {
         // --- Call all processing functions ---
         processMediaEmbeds();
         processTextAlignment();
-        processImages();
+        processImagesAndCaptions(); // <-- Use the updated function name
         processTables();
-        processLists(); // <-- Added this call
+        processLists(); 
 
     }, [description]);
 
@@ -258,7 +249,6 @@ const ProjectContent = ({ description }) => {
         </Reveal>
     );
 };
-
 // Helper function to clean HTML and remove unwanted characters
 const cleanHtmlContent = (htmlString) => {
     if (!htmlString) return '';
