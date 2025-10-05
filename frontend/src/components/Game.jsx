@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 export default function Game() {
   const size = 6; // 6x6 grid
   const winLength = 4; // need 4 in a row to win
-  const DEPTH = 3; // minimax depth
-  const THINK_DELAY = 500; // ms
+
+  // Extremely hard but still beatable configuration:
+  const DEPTH = 4; // deeper search = stronger AI
+  const THINK_DELAY = 250; // ms (short delay for feel)
 
   const [board, setBoard] = useState(Array(size * size).fill(null));
   const [isXNext, setIsXNext] = useState(true);
@@ -15,11 +17,18 @@ export default function Game() {
   const [audio, setAudio] = useState({});
   const [lastMove, setLastMove] = useState(null);
 
+  // transposition table cached across a single game to speed minimax
+  const tt = useRef(new Map());
+
   // Preload sounds
   useEffect(() => {
     setAudio({
-      click: new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"),
-      win: new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"),
+      click: new Audio(
+        "https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"
+      ),
+      win: new Audio(
+        "https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
+      ),
       draw: new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg"),
     });
   }, []);
@@ -46,7 +55,7 @@ export default function Game() {
   for (let r = 0; r <= size - winLength; r++) {
     for (let c = 0; c <= size - winLength; c++) {
       let line = [];
-      for (let k = 0; k < winLength; k++) line.push((r + k) * size + (c + k));
+      for (let k = 0; k < winLength; k++) line.push(r + k ? (r + k) * size + (c + k) : (r + k) * size + (c + k));
       lines.push(line);
     }
   }
@@ -66,7 +75,10 @@ export default function Game() {
         return newBoard[a];
       }
     }
-    if (newBoard.every((cell, i) => cell || blocked.includes(i))) return "Draw";
+    if (
+      newBoard.every((cell, i) => cell || blocked.includes(i))
+    )
+      return "Draw";
     return null;
   }
 
@@ -77,6 +89,8 @@ export default function Game() {
     setGameMode(mode);
     setIsThinking(false);
     setLastMove(null);
+    tt.current = new Map(); // clear cache each game
+
     // Add blocked cells mechanic
     const blockedCount = 3;
     const allCells = Array.from({ length: size * size }, (_, i) => i);
@@ -125,7 +139,7 @@ export default function Game() {
       setIsThinking(true);
       setTimeout(() => {
         const aiMove = aiMoveBest(newBoard);
-        if (aiMove !== -1) newBoard[aiMove] = "O";
+        if (aiMove !== -1 && aiMove !== undefined) newBoard[aiMove] = "O";
         setBoard([...newBoard]);
         setLastMove(aiMove);
         result = checkWinner(newBoard);
@@ -139,69 +153,129 @@ export default function Game() {
     }
   }
 
-  // Evaluation function: stronger weighting and look for open lines
+  // Stronger evaluation function with open-line detection and multi-threats
   function evaluateBoard(b) {
-    let score = 0;
-    for (let line of lines) {
-      const vals = line.map((i) => b[i]);
-      const o = vals.filter((v) => v === "O").length;
-      const x = vals.filter((v) => v === "X").length;
-      const empty = vals.filter((v) => !v).length;
+  let score = 0;
 
-      // immediate wins/loses handled elsewhere, but give large weight
-      if (o > 0 && x === 0) {
-        if (o === 3 && empty === 1) score += 1000; // open-3 (one away)
-        else if (o === 2 && empty === 2) score += 200; // 2-in-line with two empties
-        else if (o === 1) score += 10;
-      }
-      if (x > 0 && o === 0) {
-        if (x === 3 && empty === 1) score -= 900; // player threat
-        else if (x === 2 && empty === 2) score -= 180;
-        else if (x === 1) score -= 8;
-      }
+  for (let line of lines) {
+    const vals = line.map((i) => b[i]);
+    const o = vals.filter((v) => v === "O").length;
+    const x = vals.filter((v) => v === "X").length;
+    const empty = vals.filter((v) => !v).length;
+
+    if (o > 0 && x > 0) continue; // blocked line
+
+    // Offensive (AI)
+    if (o > 0 && x === 0) {
+      if (o === 3 && empty === 1) score += 3000; // almost win
+      else if (o === 2 && empty === 2) score += 600;
+      else if (o === 1 && empty === 3) score += 100;
     }
 
-    // center control bonus
-    const centerIndices = [];
-    const mid = Math.floor(size / 2);
-    for (let dr = -1; dr <= 0; dr++) {
-      for (let dc = -1; dc <= 0; dc++) {
-        const r = mid + dr;
-        const c = mid + dc;
-        if (r >= 0 && r < size && c >= 0 && c < size) centerIndices.push(r * size + c);
-      }
+    // Defensive (Player threats)
+    if (x > 0 && o === 0) {
+      if (x === 3 && empty === 1) score -= 2900;
+      else if (x === 2 && empty === 2) score -= 500;
+      else if (x === 1 && empty === 3) score -= 90;
     }
-    for (const ci of centerIndices) {
-      if (b[ci] === "O") score += 30;
-      if (b[ci] === "X") score -= 20;
-    }
-
-    return score;
   }
 
-  // alpha-beta minimax with depth limit
+  // Center control (priority)
+  const mid = Math.floor(size / 2);
+  const centerIndices = [
+    mid * size + mid,
+    mid * size + mid - 1,
+    (mid - 1) * size + mid,
+    (mid - 1) * size + mid - 1,
+  ];
+  for (const ci of centerIndices) {
+    if (b[ci] === "O") score += 50;
+    if (b[ci] === "X") score -= 40;
+  }
+
+  return score;
+}
+
+  // Helper: get all legal moves (non-blocked, empty)
+  function legalMoves(b) {
+    return b
+      .map((v, i) => (v || blocked.includes(i) ? null : i))
+      .filter((v) => v !== null);
+  }
+
+  // Helper: board -> key string for transposition table
+  function boardKey(b) {
+    return b.map((c) => (c ? c : ".")).join("");
+  }
+
+  // Minimax with alpha-beta and transposition table
   function minimax(b, depth, alpha, beta, maximizingPlayer) {
+    const key = boardKey(b) + `|d${depth}|m${maximizingPlayer ? "1" : "0"}`;
+    const cached = tt.current.get(key);
+    if (cached) return cached;
+
     const winnerNow = checkWinner(b);
-    if (winnerNow === "O") return { score: 100000 - depth };
-    if (winnerNow === "X") return { score: -100000 + depth };
-    if (winnerNow === "Draw") return { score: 0 };
-    if (depth === 0) return { score: evaluateBoard(b) };
+    if (winnerNow === "O") {
+      const res = { score: 100000 - (DEPTH - depth), move: undefined };
+      tt.current.set(key, res);
+      return res;
+    }
+    if (winnerNow === "X") {
+      const res = { score: -100000 + (DEPTH - depth), move: undefined };
+      tt.current.set(key, res);
+      return res;
+    }
+    if (winnerNow === "Draw") {
+      const res = { score: 0, move: undefined };
+      tt.current.set(key, res);
+      return res;
+    }
+    if (depth === 0) {
+      const res = { score: evaluateBoard(b), move: undefined };
+      tt.current.set(key, res);
+      return res;
+    }
 
-    const moves = b.map((v, i) => (v || blocked.includes(i) ? null : i)).filter((v) => v !== null);
-    if (moves.length === 0) return { score: 0 };
+    const moves = legalMoves(b);
+    if (moves.length === 0) {
+      const res = { score: 0, move: undefined };
+      tt.current.set(key, res);
+      return res;
+    }
 
-    // move ordering: try immediate wins/blocks first
-    const ordered = [...moves];
-    ordered.sort((a, bIdx) => {
-      // prefer moves that create immediate win
-      const copyA = [...b];
-      copyA[a] = maximizingPlayer ? "O" : "X";
-      const winA = checkWinner(copyA) === (maximizingPlayer ? "O" : "X");
-      const copyB = [...b];
-      copyB[bIdx] = maximizingPlayer ? "O" : "X";
-      const winB = checkWinner(copyB) === (maximizingPlayer ? "O" : "X");
-      return (winB ? 1 : 0) - (winA ? 1 : 0);
+    // Move ordering: evaluate heuristics quickly to sort moves
+    const scoredMoves = moves.map((m) => {
+      // immediate win/block check
+      const copyForO = [...b];
+      copyForO[m] = "O";
+      const winsForO = checkWinner(copyForO) === "O";
+      const copyForX = [...b];
+      copyForX[m] = "X";
+      const winsForX = checkWinner(copyForX) === "X";
+
+      if (winsForO) return { move: m, score: 999999 };
+      if (winsForX) return { move: m, score: 999990 }; // blocking high priority
+
+      // heuristic quick score: evaluateBoard after placing O (aggressive) and placing X (defensive)
+      const afterO = [...b];
+      afterO[m] = "O";
+      const afterX = [...b];
+      afterX[m] = "X";
+
+      // small eval to sort
+      const h = evaluateBoard(afterO) * 1.05 - evaluateBoard(afterX) * 0.95;
+
+      // center proximity bonus
+      const r = Math.floor(m / size);
+      const c = m % size;
+      const centerR = (size - 1) / 2;
+      const centerC = (size - 1) / 2;
+      const dist = Math.abs(r - centerR) + Math.abs(c - centerC);
+      return { move: m, score: h - dist * 8 };
     });
+
+    scoredMoves.sort((a, b) => b.score - a.score);
+    const ordered = scoredMoves.map((s) => s.move);
 
     if (maximizingPlayer) {
       let value = -Infinity;
@@ -215,9 +289,11 @@ export default function Game() {
           bestMove = m;
         }
         alpha = Math.max(alpha, value);
-        if (alpha >= beta) break; // beta cut-off
+        if (alpha >= beta) break; // beta cutoff
       }
-      return { score: value, move: bestMove };
+      const res = { score: value, move: bestMove };
+      tt.current.set(key, res);
+      return res;
     } else {
       let value = Infinity;
       let bestMove = ordered[0];
@@ -230,32 +306,53 @@ export default function Game() {
           bestMove = m;
         }
         beta = Math.min(beta, value);
-        if (alpha >= beta) break; // alpha cut-off
+        if (alpha >= beta) break; // alpha cutoff
       }
-      return { score: value, move: bestMove };
+      const res = { score: value, move: bestMove };
+      tt.current.set(key, res);
+      return res;
     }
   }
 
+  // AI move selection — no randomness; prefers winning/blocking and best minimax move
   function aiMoveBest(currentBoard) {
-    // quick heuristic shortcuts: win/block immediate
-    const empties = currentBoard.map((v, i) => (v || blocked.includes(i) ? null : i)).filter((v) => v !== null);
+    const empties = legalMoves(currentBoard);
+
+    // 1. Immediate win
     for (const i of empties) {
       const copy = [...currentBoard];
       copy[i] = "O";
       if (checkWinner(copy) === "O") return i;
     }
+
+    // 2. Immediate block of player's win
     for (const i of empties) {
       const copy = [...currentBoard];
       copy[i] = "X";
-      if (checkWinner(copy) === "X") return i; // block
+      if (checkWinner(copy) === "X") return i;
     }
 
-    // otherwise run minimax with depth limit and alpha-beta
+    // 3. Use minimax to choose the best move
+    // Clear or reuse transposition table (we keep across a game)
     const { move } = minimax(currentBoard, DEPTH, -Infinity, Infinity, true);
     if (move !== undefined) return move;
 
-    // fallback: random
-    return empties.length ? empties[Math.floor(Math.random() * empties.length)] : -1;
+    // 4. Heuristic fallback (center-pref + highest eval)
+    const centerIdx = Math.floor((size * size) / 2);
+    if (empties.includes(centerIdx)) return centerIdx;
+
+    let best = empties[0];
+    let bestScore = -Infinity;
+    for (const m of empties) {
+      const copy = [...currentBoard];
+      copy[m] = "O";
+      const s = evaluateBoard(copy);
+      if (s > bestScore) {
+        bestScore = s;
+        best = m;
+      }
+    }
+    return best !== undefined ? best : (empties.length ? empties[0] : -1);
   }
 
   return (
@@ -363,7 +460,7 @@ export default function Game() {
         </div>
 
         <p className="text-xs md:text-sm text-center text-slate-500 dark:text-slate-400 px-4">
-          💡 Some cells are blocked (✖) each game for extra challenge!
+          💡 Some cells are blocked (✖) each game for extra challenge! AI is tuned to be extremely strong but still beatable with careful play.
         </p>
       </div>
 
