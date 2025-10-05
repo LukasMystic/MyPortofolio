@@ -353,26 +353,38 @@ const HomePage = () => {
                 </Reveal>
 
                 <Reveal delay={500} animation="slideUp">
-                  <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
-                    <Link
-                      to="/projects"
-                      className="group relative inline-flex items-center justify-center w-full sm:w-auto gap-3 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-6 py-3 sm:px-8 sm:py-4 font-bold shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <span className="relative z-10">View Projects</span>
-                      <svg className="relative z-10 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </Link>
-                    
-                    <Link
-                      to="/contact"
-                      className="inline-flex items-center justify-center w-full sm:w-auto gap-3 rounded-full border-2 border-blue-200 bg-white/90 text-blue-700 px-6 py-3 sm:px-8 sm:py-4 font-bold hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 hover:scale-105 dark:border-slate-600 dark:bg-slate-800/80 dark:text-cyan-400 dark:hover:bg-slate-700 backdrop-blur-sm shadow-lg"
-                    >
-                      Let's Connect
-                    </Link>
-                  </div>
-                </Reveal>
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-8">
+                  <Link
+                    to="/projects"
+                    className="group relative inline-flex items-center justify-center w-full sm:w-auto gap-3 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-6 py-3 sm:px-8 sm:py-4 font-bold shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <span className="relative z-10">View Projects</span>
+                    <svg className="relative z-10 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
+
+                  {/* NEW - DOWNLOAD CV BUTTON */}
+                  <a
+                    href="/CV.pdf"
+                    download="CV-StanleyPrasetio.pdf"
+                    className="inline-flex items-center justify-center w-full sm:w-auto gap-2 rounded-full border-2 border-slate-300/80 bg-slate-100/80 text-slate-700 px-6 py-3 sm:px-8 sm:py-4 font-bold hover:border-slate-400 hover:bg-slate-200 transition-all duration-300 hover:scale-105 dark:border-slate-600 dark:bg-slate-800/80 dark:text-cyan-400 dark:hover:bg-slate-700 backdrop-blur-sm shadow-lg"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span>Download CV</span>
+                  </a>
+                  
+                  <Link
+                    to="/contact"
+                    className="inline-flex items-center justify-center w-full sm:w-auto gap-2 rounded-full border-2 border-blue-200 bg-white/90 text-blue-700 px-6 py-3 sm:px-8 sm:py-4 font-bold hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 hover:scale-105 dark:border-slate-600 dark:bg-slate-800/80 dark:text-cyan-400 dark:hover:bg-slate-700 backdrop-blur-sm shadow-lg"
+                  >
+                    <span>Let's Connect</span>
+                  </Link>
+                </div>
+              </Reveal>
 
                 <Reveal delay={600} animation="bounce">
                   <div className="flex items-center justify-center lg:justify-start gap-4">
