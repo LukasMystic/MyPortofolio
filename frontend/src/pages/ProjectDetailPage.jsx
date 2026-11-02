@@ -1,455 +1,154 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import SEO from '../components/SEO';
-import LoadingSpinner from '../components/LoadingSpinner';
+import Glyph from '../components/Glyph';
+import ProjectCard from '../components/ProjectCard';
+import { Page, Section, Button, ActivityIndicator } from '../components/ui';
+import { plainText } from '../lib/text';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
-// --- Animation & UI Components ---
+const youTubeId = (url = '') => {
+  const match = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/);
+  return match && match[2].length === 11 ? match[2] : null;
+};
 
-const Reveal = ({ children, delay = 0, animation = 'slideUp' }) => {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-
+// Normalise CKEditor output so it reads like the rest of the site. Styling lives
+// in .rich-text (index.css); this only fixes structure CSS cannot reach.
+const useNormalisedContent = (ref, html) => {
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => setVisible(true), delay);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [delay]);
-  
-  const animationClasses = {
-    slideUp: 'transition-all duration-700 ease-out transform',
-    visible: 'opacity-100 translate-y-0',
-    hidden: 'opacity-0 translate-y-8'
-  };
+    const root = ref.current;
+    if (!root) return;
 
-  return (
-    <div ref={ref} className={`${animationClasses.slideUp} ${visible ? animationClasses.visible : animationClasses.hidden}`}>
-      {children}
-    </div>
-  );
+    root.querySelectorAll('oembed[url]').forEach((embed) => {
+      const id = youTubeId(embed.getAttribute('url'));
+      if (!id) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'video';
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube-nocookie.com/embed/${id}`;
+      iframe.title = 'Video';
+      iframe.allow = 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allowFullscreen = true;
+      iframe.loading = 'lazy';
+      wrap.appendChild(iframe);
+      (embed.closest('figure.media') || embed).replaceWith(wrap);
+    });
+
+    root.querySelectorAll('table').forEach((table) => {
+      if (table.parentElement?.classList.contains('table-wrap')) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      table.parentNode.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    });
+
+    // CKEditor spaces content with empty paragraphs; spacing comes from CSS instead.
+    root.querySelectorAll('p').forEach((p) => {
+      if (!p.querySelector('img, iframe, video') && !p.textContent.replace(/\u00a0/g, '').trim()) p.remove();
+    });
+
+    root.querySelectorAll('img').forEach((img) => {
+      img.loading = 'lazy';
+      img.removeAttribute('align');
+      img.style.removeProperty('float');
+    });
+
+    root.querySelectorAll('a[href^="http"]').forEach((a) => {
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+    });
+  }, [ref, html]);
 };
-
-const AnimatedBackground = () => (
-  <div className="fixed inset-0 -z-10 overflow-hidden">
-    <div className="absolute inset-0 bg-slate-50 dark:bg-slate-950" />
-    <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 bg-purple-200/30 rounded-full filter blur-3xl opacity-50 animate-blob dark:bg-purple-900/20" />
-    <div className="absolute bottom-0 -right-1/4 w-1/2 h-1/2 bg-cyan-200/30 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-4000 dark:bg-cyan-900/20" />
-  </div>
-);
-
-// --- Page-Specific Components ---
-
-const HeroImage = ({ src, alt, title }) => {
-    const [scrollY, setScrollY] = useState(0);
-
-    useEffect(() => {
-        const handleScroll = () => setScrollY(window.scrollY);
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    return (
-        <div className="relative h-96 overflow-hidden rounded-t-3xl">
-            <img 
-              src={src} 
-              alt={alt} 
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-75 ease-out"
-              style={{ transform: `translateY(${scrollY * 0.2}px) scale(${1 + scrollY * 0.0001})` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-            <div className="absolute bottom-0 left-0 p-8">
-                <h1 className="text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-lg">
-                    {title}
-                </h1>
-            </div>
-        </div>
-    );
-};
-
-const ProjectMeta = ({ date }) => (
-    <Reveal delay={100}>
-        <div className="mb-8 flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            <span>Posted on {new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-        </div>
-    </Reveal>
-);
-
-const ProjectContent = ({ description }) => {
-    const contentRef = useRef(null);
-
-    useEffect(() => {
-        if (!contentRef.current) return;
-
-        // Process media embeds (YouTube, etc.) - no changes here
-        const processMediaEmbeds = () => {
-            const mediaElements = contentRef.current.querySelectorAll('oembed[url]');
-            mediaElements.forEach(embed => {
-                const url = embed.getAttribute('url');
-                if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
-                    const videoId = extractYouTubeId(url);
-                    if (videoId) {
-                        const iframe = document.createElement('div');
-                        iframe.className = 'relative w-full aspect-video my-6 rounded-lg overflow-hidden shadow-lg';
-                        iframe.innerHTML = `<iframe class="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
-                        embed.replaceWith(iframe);
-                    }
-                }
-            });
-        };
-
-        // Process text alignment from CKEditor - no changes here
-        const processTextAlignment = () => {
-            const elementsWithStyles = contentRef.current.querySelectorAll('[style*="text-align"]');
-            elementsWithStyles.forEach(element => {
-                const style = element.getAttribute('style');
-                if (style) {
-                    if (style.includes('text-align: center')) element.classList.add('text-center');
-                    else if (style.includes('text-align: right')) element.classList.add('text-right');
-                    else if (style.includes('text-align: justify')) element.classList.add('text-justify');
-                    else if (style.includes('text-align: left')) element.classList.add('text-left');
-                }
-            });
-            const centerElements = contentRef.current.querySelectorAll('.ck-align-center');
-            centerElements.forEach(el => el.classList.add('text-center'));
-            const rightElements = contentRef.current.querySelectorAll('.ck-align-right');
-            rightElements.forEach(el => el.classList.add('text-right'));
-        };
-        
-        // --- MODIFIED: Process image alignment AND captions ---
-        const processImagesAndCaptions = () => {
-  if (!contentRef.current) return;
-
-  // 1) Wrap orphan <img> (p > img or direct img) into a <figure class="image"> if not wrapped
-  const orphanImgs = contentRef.current.querySelectorAll('p > img, .project-content.prose > img, .project-content img:not(figure img)');
-  orphanImgs.forEach(img => {
-    if (img.closest('figure')) return;
-    const p = img.closest('p');
-    // if it's inside a paragraph, move it to a new figure right after the paragraph
-    const wrapper = document.createElement('figure');
-    wrapper.className = 'image';
-    if (p) {
-      p.parentNode.insertBefore(wrapper, p.nextSibling);
-      wrapper.appendChild(img);
-      // remove empty paragraph if you want:
-      if (p.textContent.trim() === '') p.remove();
-    } else {
-      img.parentNode.insertBefore(wrapper, img);
-      wrapper.appendChild(img);
-    }
-  });
-
-  // 2) Force inline styles for every image inside contentRef to override anything else
-  const allImgs = contentRef.current.querySelectorAll('img');
-  allImgs.forEach(img => {
-    // remove only float declarations from style attr (keeps widths etc)
-    const rawStyle = img.getAttribute('style') || '';
-    const cleanedStyle = rawStyle.replace(/(?:^|;)\s*float\s*:\s*(left|right|none)\s*;?/gi, '');
-    img.setAttribute('style', cleanedStyle);
-
-    // Now set the desired imperative styles (these are inline and will beat most conflicts)
-    img.style.display = 'block';
-    img.style.marginLeft = 'auto';
-    img.style.marginRight = 'auto';
-    img.style.float = 'none';
-    img.style.maxWidth = '100%';
-    img.style.width = img.getAttribute('width') ? img.getAttribute('width') + 'px' : 'auto';
-    img.style.clear = 'both';
-    img.style.verticalAlign = 'middle';
-
-    // remove deprecated align attributes if present
-    if (img.hasAttribute('align')) img.removeAttribute('align');
-  });
-
-  // 3) Style figcaptions (class additions already in your code, but keep inline fallback)
-  const figures = contentRef.current.querySelectorAll('figure.image');
-  figures.forEach(figure => {
-    const caption = figure.querySelector('figcaption');
-    if (caption) {
-      caption.classList.add(
-        'text-center',
-        'text-sm',
-        'text-slate-500',
-        'dark:text-slate-400',
-        'mt-2',
-        'italic'
-      );
-      // ensure inline too
-      caption.style.textAlign = 'center';
-      caption.style.marginTop = '0.5rem';
-      caption.style.fontStyle = 'italic';
-    }
-    // also ensure the figure block is centered
-    figure.style.display = 'block';
-    figure.style.textAlign = 'center';
-    figure.style.width = '100%';
-    figure.style.margin = '0 auto';
-  });
-};
-
-
-        // Process tables and lists (no changes here)
-        const processTables = () => {
-            const tables = contentRef.current.querySelectorAll('table');
-            tables.forEach(table => {
-                const figure = table.closest('figure.table'); 
-                if (figure) {
-                    if (figure.classList.contains('ck-align-center')) {
-                       figure.style.display = 'flex';
-                       figure.style.justifyContent = 'center';
-                    } else if (figure.classList.contains('ck-align-right')) {
-                       figure.style.float = 'right';
-                    } else if (figure.classList.contains('ck-align-left')) {
-                       figure.style.float = 'left';
-                    }
-                }
-                if (!table.parentElement.classList.contains('table-container')) {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'table-container overflow-x-auto my-6 rounded-lg border border-slate-200 dark:border-slate-700';
-                    table.parentNode.insertBefore(wrapper, table);
-                    wrapper.appendChild(table);
-                }
-                table.className = 'min-w-full divide-y divide-slate-200 dark:divide-slate-700';
-                const thead = table.querySelector('thead');
-                if (thead) {
-                    thead.className = 'bg-slate-50 dark:bg-slate-800';
-                    thead.querySelectorAll('th').forEach(th => {
-                        th.className = 'px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider border border-slate-200 dark:border-slate-700';
-                    });
-                }
-                const tbody = table.querySelector('tbody');
-                if (tbody) {
-                    tbody.className = 'bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-700';
-                    tbody.querySelectorAll('tr').forEach((row, index) => {
-                        row.className = index % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800';
-                        row.querySelectorAll('td').forEach(td => {
-                            td.className = 'px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700';
-                        });
-                    });
-                }
-            });
-        };
-        const processLists = () => {
-            const unorderedLists = contentRef.current.querySelectorAll('ul');
-            unorderedLists.forEach(ul => {
-                ul.classList.add('list-disc', 'list-inside', 'pl-5', 'space-y-2', 'my-4');
-            });
-            const orderedLists = contentRef.current.querySelectorAll('ol');
-            orderedLists.forEach(ol => {
-                ol.classList.add('list-decimal', 'list-inside', 'pl-5', 'space-y-2', 'my-4');
-            });
-        };
-        // Put this inside the same useEffect where you already run processors
-const processLinks = () => {
-  if (!contentRef.current) return;
-  const isDark = document.documentElement.classList.contains('dark');
-  const linkColor = isDark ? '#22d3ee' : '#2563eb';   // cyan-400 when dark, blue-600 otherwise
-  const hoverColor = isDark ? '#06b6d4' : '#1d4ed8';  // cyan-500 / blue-700
-
-  const links = contentRef.current.querySelectorAll('a');
-  links.forEach(a => {
-    // make them open in new tab safely (optional but often desired)
-    a.setAttribute('target', '_blank');
-    a.setAttribute('rel', 'noopener noreferrer');
-
-    // remove any inline "color" styles that might conflict
-    a.style.removeProperty('color');
-
-    // force the visible hyperlink styles inline (these beat CSS specificity)
-    a.style.color = linkColor;
-    a.style.textDecoration = 'underline';
-    a.style.fontWeight = '600';
-    a.style.transition = 'color 0.15s ease-in-out';
-
-    // ensure hover color — use simple event handlers (safe and effective)
-    // remove duplicates if any (idempotent-ish)
-    a.onmouseenter = () => { a.style.color = hoverColor; };
-    a.onmouseleave = () => { a.style.color = linkColor; };
-  });
-};
-
-        // --- Call all processing functions ---
-        processMediaEmbeds();
-        processTextAlignment();
-        processImagesAndCaptions(); // <-- Use the updated function name
-        processTables();
-        processLists(); 
-        processLinks();
-
-    }, [description]);
-
-    const extractYouTubeId = (url) => {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
-    };
-
-    return (
-        <Reveal delay={200}>
-          <div
-  ref={contentRef}
-  className={
-    "project-content prose prose-lg max-w-none text-slate-700 dark:prose-invert dark:text-slate-300 leading-relaxed " +
-    "prose-headings:text-slate-800 dark:prose-headings:text-slate-100 " +
-    "prose-strong:text-slate-800 dark:prose-strong:text-slate-100 " +
-    "prose-code:text-slate-800 dark:prose-code:text-slate-100 prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded " +
-    "prose-pre:bg-slate-800 dark:prose-pre:bg-slate-900 prose-pre:text-slate-100 " +
-    "prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-slate-800 prose-blockquote:px-4 prose-blockquote:py-2 " +
-    "prose-img:rounded-lg prose-img:shadow-lg"
-  }
-  dangerouslySetInnerHTML={{ __html: description }}
-/>
-
-        </Reveal>
-    );
-};
-// Helper function to clean HTML and remove unwanted characters
-const cleanHtmlContent = (htmlString) => {
-    if (!htmlString) return '';
-    const withoutTags = htmlString.replace(/<[^>]*>/g, '');
-    return withoutTags
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/[\u200B-\u200D\uFEFF]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-};
-
-const RelatedProjectCard = ({ project }) => {
-    const cleanDescription = cleanHtmlContent(project.shortDescription);
-    
-    return (
-        <Link to={`/project/${project._id}`} className="group block overflow-hidden rounded-2xl border border-slate-200/80 bg-white/60 shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="h-48 overflow-hidden">
-                <img src={project.thumbnailUrl} alt={project.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-            </div>
-            <div className="p-5">
-                <h3 className="font-bold text-slate-800 group-hover:text-blue-600 dark:text-slate-200 dark:group-hover:text-cyan-400 text-lg">{project.title}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mt-1">{cleanDescription}</p>
-            </div>
-        </Link>
-    );
-};
-
-const CallToAction = () => (
-    <Reveal delay={400}>
-        <section className="mt-16 text-center rounded-3xl bg-gradient-to-br from-blue-600 to-cyan-500 p-12 shadow-2xl">
-            <h2 className="text-3xl font-black text-white">Interested in Working Together?</h2>
-            <p className="text-lg text-white/80 mt-2 mb-6 max-w-xl mx-auto">Let's create something amazing. I'm always excited to take on new challenges.</p>
-            <Link to="/contact" className="inline-block rounded-xl bg-white px-8 py-3 font-bold text-blue-600 shadow-lg transition-transform hover:scale-105">
-                Get In Touch
-            </Link>
-        </section>
-    </Reveal>
-);
-
-// --- Main Page Component ---
 
 const ProjectDetailPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [project, setProject] = useState(null);
-  const [relatedProjects, setRelatedProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [related, setRelated] = useState([]);
+  const [status, setStatus] = useState('loading');
+  const bodyRef = useRef(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const fetchProject = async () => {
-      setLoading(true);
-      setError(false);
+    let cancelled = false;
+    (async () => {
+      setStatus('loading');
       try {
-        const { data: currentProject } = await axios.get(`${API_BASE_URL}/api/projects/${id}`);
-        setProject(currentProject);
-
-        const { data: allProjects } = await axios.get(`${API_BASE_URL}/api/projects`);
-        setRelatedProjects(
-          allProjects
-            .filter(p => p._id !== currentProject._id)
-            .slice(0, 3)
-        );
-
+        const [{ data: current }, { data: all }] = await Promise.all([
+          axios.get(`${API_BASE_URL}/api/projects/${id}`),
+          axios.get(`${API_BASE_URL}/api/projects`),
+        ]);
+        if (cancelled) return;
+        setProject(current);
+        setRelated(all.filter((p) => p._id !== current._id && p.isFeatured).slice(0, 3));
+        setStatus('ready');
       } catch (err) {
-        setError(true);
-        console.error("Failed to fetch project:", err);
-      } finally {
-        setLoading(false);
+        console.error('Failed to fetch project:', err);
+        if (!cancelled) setStatus('error');
       }
+    })();
+    return () => {
+      cancelled = true;
     };
-    fetchProject();
   }, [id]);
 
-  if (loading) return <div className="flex h-screen items-center justify-center"><LoadingSpinner /></div>;
-  
-  if (error || !project) {
+  useNormalisedContent(bodyRef, project?.description);
+
+  if (status === 'loading') return <ActivityIndicator />;
+
+  if (status === 'error' || !project) {
     return (
-        <div className="flex h-screen items-center justify-center text-center p-4">
-            <div>
-                <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">Project Not Found</h1>
-                <p className="text-slate-600 dark:text-slate-400 mt-2">The project you're looking for doesn't exist or has been moved.</p>
-                <Link to="/projects" className="mt-6 inline-block rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white">View All Projects</Link>
-            </div>
-        </div>
+      <Page className="text-center">
+        <h1 className="mt-16 text-title1 font-bold">Project not found</h1>
+        <p className="mt-2 text-body text-label2">It may have been moved or removed.</p>
+        <Button to="/projects" className="mt-6">See all work</Button>
+      </Page>
     );
   }
-  
-  const plainShortDescription = cleanHtmlContent(project.shortDescription || '');
+
+  const published = new Date(project.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
 
   return (
-    <>
+    <Page>
       <SEO
-        title={`${project.title} | Portfolio`}
-        description={plainShortDescription}
+        title={`${project.title} | Stanley Pratama Teguh`}
+        description={plainText(project.shortDescription).slice(0, 160)}
         type="article"
-        url={`YOUR_DOMAIN/project/${project._id}`}
+        url={`https://stanleypt.vercel.app/project/${project._id}`}
         imageUrl={project.thumbnailUrl}
       />
-      <AnimatedBackground />
-      
-      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <button onClick={() => navigate(-1)} className="mb-8 inline-flex items-center gap-2 font-semibold text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-cyan-400">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Back to Projects
-        </button>
 
-        <Reveal>
-            <article className="overflow-hidden rounded-3xl bg-white/70 backdrop-blur-xl shadow-2xl dark:bg-slate-900/70 dark:border dark:border-slate-800">
-                <HeroImage src={project.thumbnailUrl} alt={project.title} title={project.title} />
-                <div className="p-8 md:p-12">
-                    <ProjectMeta date={project.createdAt} />
-                    <ProjectContent description={project.description} />
-                </div>
-            </article>
-        </Reveal>
+      <Link to="/projects" className="-ml-1 inline-flex min-h-[44px] items-center gap-0.5 text-callout text-tint hover:underline">
+        <Glyph name="chevron.left" className="h-5 w-5" weight={2.25} />
+        Work
+      </Link>
 
-        {relatedProjects.length > 0 && (
-            <Reveal delay={200}>
-                <section className="mt-16">
-                    <h2 className="text-3xl font-black text-center text-slate-800 dark:text-slate-200 mb-8">More Projects</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {relatedProjects.map(p => <RelatedProjectCard key={p._id} project={p} />)}
-                    </div>
-                </section>
-            </Reveal>
+      <article className="mt-2">
+        <header className="max-w-reading">
+          <p className="text-subhead text-label2">{published}</p>
+          <h1 className="mt-1 text-large-title font-bold md:text-[44px] md:leading-[52px] md:tracking-[-0.01em]">{project.title}</h1>
+        </header>
+
+        {project.thumbnailUrl && (
+          <img src={project.thumbnailUrl} alt="" className="mt-8 aspect-[16/9] w-full rounded-card bg-fill object-cover" />
         )}
-        
-        <CallToAction />
-      </main>
-    </>
+
+        <div className="mt-8 rounded-card bg-elevated px-5 py-6 md:px-10 md:py-10">
+          <div ref={bodyRef} className="rich-text mx-auto max-w-reading" dangerouslySetInnerHTML={{ __html: project.description }} />
+        </div>
+      </article>
+
+      {related.length > 0 && (
+        <Section title="More work">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {related.map((p) => (
+              <ProjectCard key={p._id} project={p} />
+            ))}
+          </div>
+        </Section>
+      )}
+    </Page>
   );
 };
 

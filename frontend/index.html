@@ -3,8 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/foto_kece.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stanley Pratama Teguh - Portofolio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <title>Stanley Pratama Teguh — AI engineer and iOS developer</title>
+    <script>
+      // Apply the saved or system appearance before first paint, so dark mode never flashes white.
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

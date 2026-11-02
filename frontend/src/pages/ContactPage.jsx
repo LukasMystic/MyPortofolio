@@ -1,369 +1,111 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from '../context/TranslationContext';
-import LoadingSpinner from '../components/LoadingSpinner';
 import SEO from '../components/SEO';
+import Glyph from '../components/Glyph';
+import { Page, LargeTitle, GroupedList, Row, RowIcon, Button } from '../components/ui';
+import { profile } from '../data/profile';
 
-// Get the base API URL from Vite's environment variables.
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
-const contactContent = {
-  en: {
-    title: 'Let\'s Connect',
-    subtitle: 'Ready to Create Something Amazing?',
-    description: 'Have a question or want to work together? I\'d love to hear from you. Drop me a message and let\'s start the conversation.',
-    nameLabel: 'Your Name',
-    emailLabel: 'Email Address',
-    messageLabel: 'Your Message',
-    buttonText: 'Send Message',
-    submittingText: 'Sending...',
-    contactInfo: 'Get in Touch',
-    responseTime: 'I typically respond within 24 hours',
-  },
-};
-
-// ... (Keep the Reveal, FloatingParticles, and other helper components as they are)
-const Reveal = ({ children, delay = 0, className = '', animation = 'slideUp' }) => {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => setVisible(true), delay);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [delay]);
-
-  const animations = {
-    slideUp: visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8',
-    slideLeft: visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8',
-    slideRight: visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8',
-    fadeIn: visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
-    bounce: visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
-  };
-
+// A form laid out like an iOS inset grouped form: labels above fields, one
+// card, a single primary action, inline status instead of a toast.
+const Field = ({ id, label, as = 'input', ...props }) => {
+  const Control = as;
   return (
-    <div
-      ref={ref}
-      style={{ transitionDelay: `${delay}ms` }}
-      className={`${className} transform transition-all duration-700 ease-out ${animations[animation]}`}
-    >
-      {children}
-    </div>
-  );
-};
-
-const FloatingParticles = () => {
-  const particles = Array.from({ length: 20 }, (_, i) => ({
-    id: i,
-    size: Math.random() * 4 + 2,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    delay: Math.random() * 4,
-    duration: Math.random() * 10 + 10
-  }));
-
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden">
-      {particles.map((particle) => (
-        <div
-          key={particle.id}
-          className="absolute rounded-full bg-gradient-to-r from-blue-400/20 to-cyan-400/20 animate-float"
-          style={{
-            width: `${particle.size}px`,
-            height: `${particle.size}px`,
-            left: `${particle.x}%`,
-            top: `${particle.y}%`,
-            animationDelay: `${particle.delay}s`,
-            animationDuration: `${particle.duration}s`
-          }}
-        />
-      ))}
-    </div>
-  );
-};
-
-const AnimatedBackground = () => (
-  <div className="fixed inset-0 pointer-events-none">
-    <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 animate-gradient-shift" />
-    <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob dark:bg-purple-500/10" />
-    <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000 dark:bg-yellow-500/10" />
-    <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000 dark:bg-pink-500/10" />
-    <div className="absolute bottom-20 right-20 w-72 h-72 bg-blue-300/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-6000 dark:bg-blue-500/10" />
+  <div className="px-4 py-3">
+    <label htmlFor={id} className="block text-footnote font-medium text-label2">
+      {label}
+    </label>
+    <Control
+      id={id}
+      className="mt-1 w-full resize-y bg-transparent text-body text-label placeholder:text-label3 focus:outline-none"
+      {...props}
+    />
   </div>
-);
-
-const ContactInfoCard = ({ icon, title, content, delay }) => (
-  <Reveal delay={delay} animation="slideLeft">
-    <div className="group relative overflow-hidden rounded-xl border bg-white/80 backdrop-blur-sm p-6 shadow-md hover:shadow-xl transition-all duration-500 dark:border-slate-800 dark:bg-slate-900/70 hover:scale-[1.02] hover:-translate-y-1">
-      <div className="absolute inset-0 -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-tr from-blue-50 to-cyan-50 dark:from-slate-800/30 dark:to-slate-700/20" />
-      <div className="absolute -top-2 -right-2 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700" />
-      
-      <div className="relative flex items-center gap-4">
-        <div className="flex-shrink-0 p-3 rounded-full bg-gradient-to-r from-blue-500/10 to-cyan-500/10 group-hover:from-blue-500/20 group-hover:to-cyan-500/20 transition-all duration-300">
-          {icon}
-        </div>
-        <div>
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-700 dark:group-hover:text-cyan-400 transition-colors">
-            {title}
-          </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-300">{content}</p>
-        </div>
-      </div>
-    </div>
-  </Reveal>
-);
-
-const AnimatedInput = ({ label, type = 'text', name, value, onChange, required = false, rows, delay = 0 }) => {
-  const [focused, setFocused] = useState(false);
-  const [hasValue, setHasValue] = useState(false);
-
-  useEffect(() => {
-    setHasValue(value && value.length > 0);
-  }, [value]);
-
-  const InputComponent = type === 'textarea' ? 'textarea' : 'input';
-
-  return (
-    <Reveal delay={delay} animation="slideUp">
-      <div className="relative group">
-        <InputComponent
-          type={type === 'textarea' ? undefined : type}
-          name={name}
-          value={value}
-          onChange={onChange}
-          required={required}
-          rows={rows}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          className={`
-            w-full px-4 py-4 rounded-xl border-2 bg-white/90 backdrop-blur-sm shadow-sm 
-            transition-all duration-300 focus:outline-none focus:shadow-lg
-            dark:bg-slate-800/70 dark:text-slate-200
-            ${focused || hasValue 
-              ? 'border-blue-500 focus:border-cyan-400 dark:border-cyan-500' 
-              : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-            }
-            ${type === 'textarea' ? 'resize-none min-h-[120px]' : 'h-14'}
-            placeholder-transparent
-          `}
-          placeholder={label}
-        />
-        <label
-          className={`
-            absolute left-4 pointer-events-none transition-all duration-300 font-medium
-            ${focused || hasValue
-              ? 'top-2 text-xs text-blue-600 dark:text-cyan-400'
-              : 'top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400'
-            }
-            ${type === 'textarea' && (focused || hasValue) ? 'top-3' : ''}
-          `}
-        >
-          {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
-        </label>
-        
-        <div className={`
-          absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-400 
-          transition-all duration-300 transform origin-left
-          ${focused ? 'w-full scale-x-100' : 'w-0 scale-x-0'}
-        `} />
-      </div>
-    </Reveal>
   );
 };
-
 
 const ContactPage = () => {
-  // Removed 'translateText' as it's not provided by the context
-  const { isTranslating, content } = useTranslation();
-  // Static text is always in English now, simplifying the logic
-  const t = contactContent.en;
-  const [formData, setFormData] = useState({ name: '', email: '', message: '', honeypot: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [responseMessage, setResponseMessage] = useState('');
-  const [responseType, setResponseType] = useState('');
+  const { content } = useTranslation();
+  const cv = content?.cv || {};
+  const [form, setForm] = useState({ name: '', email: '', message: '', honeypot: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState(null);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setResponseMessage('');
-    
+    setSubmitting(true);
+    setResult(null);
     try {
-      // Use the API_BASE_URL for the API call
-      const { data } = await axios.post(`${API_BASE_URL}/api/contact`, formData);
-      // Display the success message directly from the API response
-      setResponseMessage(data.message);
-      setResponseType('success');
-      setFormData({ name: '', email: '', message: '', honeypot: '' });
+      const { data } = await axios.post(`${API_BASE_URL}/api/contact`, form);
+      setResult({ type: 'success', message: data.message || 'Thanks — your message is on its way.' });
+      setForm({ name: '', email: '', message: '', honeypot: '' });
     } catch (err) {
-      const serverError = err.response?.data?.message || 'An error occurred. Please try again.';
-      // Display the error message directly from the API response
-      setResponseMessage(serverError);
-      setResponseType('error');
+      setResult({ type: 'error', message: err.response?.data?.message || 'That didn’t go through. Please try again, or email me directly.' });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
-  const seoTitle = `Contact | ${content?.cv?.fullName || 'Portfolio'}`;
-  const seoDescription = `Get in touch with ${content?.cv?.fullName || ''}. Send a message directly through the contact form.`;
-
-  if (isTranslating) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   return (
-    <div className="relative min-h-screen">
+    <Page>
       <SEO
-        title={seoTitle}
-        description={seoDescription}
-        name={content?.cv?.fullName}
+        title={`Contact | ${cv.fullName || 'Portfolio'}`}
+        description={`Get in touch with ${cv.fullName || 'me'}. ${profile.availability}`}
+        name={cv.fullName}
         type="website"
         url="https://stanleypt.vercel.app/contact"
       />
 
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @keyframes float { 0%, 100% { transform: translateY(0px) rotate(0deg); } 33% { transform: translateY(-10px) rotate(1deg); } 66% { transform: translateY(5px) rotate(-1deg); } }
-          @keyframes blob { 0%, 100% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(30px, -50px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } }
-          @keyframes gradient-shift { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
-          @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); } 50% { box-shadow: 0 0 30px rgba(34, 211, 238, 0.6); } }
-          .animate-float { animation: float ease-in-out infinite; }
-          .animate-blob { animation: blob 7s ease-in-out infinite; }
-          .animate-gradient-shift { animation: gradient-shift 4s ease-in-out infinite; }
-          .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
-          .animation-delay-2000 { animation-delay: 2s; }
-          .animation-delay-4000 { animation-delay: 4s; }
-          .animation-delay-6000 { animation-delay: 6s; }
-        `
-      }} />
+      <LargeTitle title="Contact" subtitle={`${profile.availability} The quickest way to reach me is email.`} />
 
-      <AnimatedBackground />
-      <FloatingParticles />
-
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 md:py-16">
-        <div className="text-center mb-12">
-          <Reveal animation="slideUp">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <span className="inline-block h-2 w-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 animate-pulse" />
-              <span className="uppercase tracking-widest text-xs text-blue-600 font-semibold dark:text-cyan-400">
-                Contact
-              </span>
-            </div>
-          </Reveal>
-          <Reveal animation="fadeIn" delay={100}>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 leading-tight dark:text-slate-100 mb-6 bg-gradient-to-r from-slate-900 via-blue-800 to-slate-900 dark:from-slate-100 dark:via-cyan-300 dark:to-slate-100 bg-clip-text text-transparent">
-              {t.title}
-            </h1>
-          </Reveal>
-          <Reveal animation="slideUp" delay={200}>
-            <p className="text-xl md:text-2xl text-blue-600 dark:text-cyan-400 font-semibold mb-4">
-              {t.subtitle}
-            </p>
-          </Reveal>
-          <Reveal animation="fadeIn" delay={300}>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
-              {t.description}
-            </p>
-          </Reveal>
-          <Reveal animation="slideUp" delay={400}>
-            <div className="mt-6 h-1.5 w-28 mx-auto rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 animate-pulse" />
-          </Reveal>
+      <div className="grid gap-8 md:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="space-y-6">
+          <GroupedList inset="57px">
+            {cv.email && <Row href={`mailto:${cv.email}`} icon={<RowIcon name="envelope" color="#007AFF" />} title="Email" subtitle={cv.email} />}
+            {cv.linkedIn && <Row href={cv.linkedIn} icon={<RowIcon name="linkedin" color="#0A66C2" />} title="LinkedIn" subtitle="stanley-pratama-teguh" />}
+            {cv.github && <Row href={cv.github} icon={<RowIcon name="github" color="#1C1C1E" />} title="GitHub" subtitle="LukasMystic" />}
+          </GroupedList>
+          <GroupedList inset="57px">
+            <Row href="/CV.pdf" icon={<RowIcon name="doc.text" color="#FF9500" />} title="Download CV" subtitle="PDF" />
+          </GroupedList>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
-          <div className="lg:col-span-1">
-            <Reveal animation="slideRight">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                  {t.contactInfo}
-                </h2>
-                <p className="text-slate-600 dark:text-slate-400">
-                  {t.responseTime}
-                </p>
-              </div>
-            </Reveal>
-            <div className="space-y-6">
-              <ContactInfoCard
-                delay={100}
-                icon={<svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
-                title="Email"
-                content="Let's discuss your project"
-              />
-              <ContactInfoCard
-                delay={200}
-                icon={<svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-                title="Location"
-                content="Available for remote work"
-              />
-              <ContactInfoCard
-                delay={300}
-                icon={<svg className="h-6 w-6 text-blue-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-                title="Response Time"
-                content="Within 24 hours"
-              />
-            </div>
+        <form onSubmit={onSubmit} noValidate={false} aria-describedby={result ? 'form-status' : undefined}>
+          <h2 className="mb-1.5 px-4 text-footnote uppercase text-label2">Send a message</h2>
+          <div className="grouped-list overflow-hidden rounded-card bg-elevated">
+            <Field id="name" name="name" label="Name" autoComplete="name" required value={form.name} onChange={onChange} />
+            <Field id="email" name="email" type="email" label="Email" autoComplete="email" inputMode="email" required value={form.email} onChange={onChange} />
+            <Field id="message" name="message" as="textarea" rows={6} label="Message" required value={form.message} onChange={onChange} />
+          </div>
+          <div className="hidden" aria-hidden="true">
+            <label htmlFor="honeypot">Leave this empty</label>
+            <input type="text" id="honeypot" name="honeypot" tabIndex={-1} autoComplete="off" value={form.honeypot} onChange={onChange} />
           </div>
 
-          <div className="lg:col-span-2">
-            <Reveal animation="slideLeft">
-              <div className="relative overflow-hidden rounded-3xl border bg-white/80 backdrop-blur-xl shadow-2xl dark:border-slate-800/50 dark:bg-slate-900/80 p-8 md:p-10">
-                <div className="absolute inset-0 opacity-60 bg-[radial-gradient(800px_400px_at_0%_0%,rgba(59,130,246,0.1),transparent_50%),radial-gradient(600px_300px_at_100%_100%,rgba(34,211,238,0.1),transparent_50%)]" />
-                <div className="relative z-10">
-                  {responseMessage && (
-                    <Reveal animation="slideUp">
-                      <div className={`p-4 rounded-xl mb-6 text-center backdrop-blur-sm border ${responseType === 'success' ? 'bg-emerald-100/80 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800/50' : 'bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-800/50'}`}>
-                        <div className="flex items-center justify-center gap-2">
-                          {responseType === 'success' ? <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> : <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>}
-                          {responseMessage}
-                        </div>
-                      </div>
-                    </Reveal>
-                  )}
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <AnimatedInput label={t.nameLabel} name="name" value={formData.name} onChange={handleChange} required delay={0} />
-                      <AnimatedInput label={t.emailLabel} type="email" name="email" value={formData.email} onChange={handleChange} required delay={100} />
-                    </div>
-                    <AnimatedInput label={t.messageLabel} type="textarea" name="message" value={formData.message} onChange={handleChange} required rows={6} delay={200} />
-                    <div className="hidden" aria-hidden="true">
-                      <label htmlFor="honeypot">Bot trap:</label>
-                      <input type="text" name="honeypot" id="honeypot" value={formData.honeypot} onChange={handleChange} tabIndex="-1" autoComplete="off" />
-                    </div>
-                    <Reveal delay={300} animation="slideUp">
-                      <div className="text-center pt-4">
-                        <button type="submit" disabled={isSubmitting} className={`group relative inline-flex items-center gap-3 rounded-full text-white px-8 py-4 font-bold shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden ${isSubmitting ? 'bg-gradient-to-r from-slate-400 to-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:scale-105 hover:-translate-y-1'}`}>
-                          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          {isSubmitting ? (<><div className="relative z-10 h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" /><span className="relative z-10">{t.submittingText}</span></>) : (<><span className="relative z-10">{t.buttonText}</span><svg className="relative z-10 h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></>)}
-                        </button>
-                      </div>
-                    </Reveal>
-                  </form>
-                </div>
-              </div>
-            </Reveal>
+          {result && (
+            <p
+              id="form-status"
+              role="status"
+              className={`mt-3 flex items-start gap-2 px-4 text-subhead ${result.type === 'success' ? 'text-sys-green' : 'text-sys-red'}`}
+            >
+              <Glyph name={result.type === 'success' ? 'checkmark' : 'exclamationmark.circle'} className="mt-0.5 h-4 w-4" weight={2.25} />
+              {result.message}
+            </p>
+          )}
+
+          <div className="mt-4 px-1">
+            <Button type="submit" disabled={submitting} className="w-full sm:w-auto sm:min-w-[160px]">
+              {submitting ? 'Sending…' : 'Send'}
+            </Button>
           </div>
-        </div>
+        </form>
       </div>
-    </div>
+    </Page>
   );
 };
 
 export default ContactPage;
-

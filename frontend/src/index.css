@@ -1,292 +1,227 @@
-/* ==========================================================================
-   1. TAILWIND & BASE IMPORTS
-   ========================================================================== */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ==========================================================================
-   2. GLOBAL LAYOUT & THEME VARIABLES
+   System colors
+   Light and dark values follow Apple's semantic system colors. Text tints use
+   the higher-contrast blues Apple ships on the web (#0066CC / #2997FF) so links
+   pass WCAG AA; filled buttons use #0071E3 with white text in both modes.
    ========================================================================== */
 
 :root {
-  /* Site Backgrounds */
-  --bg-color-light: #f9fafb;
-  --bg-color-dark: #0b1220;
-
-  /* Custom Scrollbar Colors */
-  --scrollbar-thumb-start: #2563eb;
-  --scrollbar-thumb-end: #06b6d4;
-  --scrollbar-thumb-hover-start: #1d4ed8;
-  --scrollbar-thumb-hover-end: #0891b2;
+  --bg: 255 255 255;            /* systemBackground */
+  --grouped: 242 242 247;       /* systemGroupedBackground */
+  --elevated: 255 255 255;      /* secondarySystemGroupedBackground */
+  --elevated2: 242 242 247;     /* tertiarySystemGroupedBackground */
+  --label: 0 0 0;
+  --label2: rgba(60, 60, 67, 0.72);
+  --label3: rgba(60, 60, 67, 0.45);
+  --separator: rgba(60, 60, 67, 0.22);
+  --fill: rgba(118, 118, 128, 0.12);
+  --fill2: rgba(118, 118, 128, 0.2);
+  --tint: 0 102 204;
+  --tint-fill: 0 113 227;
+  --green: 36 138 61;
+  --red: 215 0 21;
+  --material: rgba(255, 255, 255, 0.72);
+  color-scheme: light;
 }
 
-html {
-  height: 100%;
-  width: 100%;
-  background-color: var(--bg-color-light);
-}
-
-.dark html {
-  background-color: var(--bg-color-dark);
-}
-
-/* FINAL FIX: Removed overflow-x: hidden to allow sticky header */
-body,
-#root {
-  min-height: 100%;
-  width: 100%;
+.dark {
+  --bg: 0 0 0;
+  --grouped: 0 0 0;
+  --elevated: 28 28 30;
+  --elevated2: 44 44 46;
+  --label: 255 255 255;
+  --label2: rgba(235, 235, 245, 0.68);
+  --label3: rgba(235, 235, 245, 0.4);
+  --separator: rgba(84, 84, 88, 0.6);
+  --fill: rgba(118, 118, 128, 0.24);
+  --fill2: rgba(118, 118, 128, 0.32);
+  --tint: 41 151 255;
+  --tint-fill: 0 113 227;
+  --green: 48 209 88;
+  --red: 255 69 58;
+  --material: rgba(22, 22, 23, 0.72);
+  color-scheme: dark;
 }
 
 /* ==========================================================================
-   3. CUSTOM STYLED COMPONENTS
+   Base
    ========================================================================== */
 
-/**
- * Custom Scrollbar
- */
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--scrollbar-thumb-start), var(--scrollbar-thumb-end));
-  border-radius: 9999px;
-}
-*::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, var(--scrollbar-thumb-hover-start), var(--scrollbar-thumb-hover-end));
-}
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb-start) transparent;
+@layer base {
+  html {
+    background-color: rgb(var(--grouped));
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-grouped font-sans text-body text-label antialiased;
+    min-height: 100%;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: rgb(var(--tint) / 0.25);
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(var(--tint) / 0.6);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
 }
 
-/**
- * Animated Background Blobs
- */
-@keyframes floatBlobs {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(12px, -10px); }
+@layer components {
+  /* Translucent bar material (navigation and tab bars) */
+  .material-bar {
+    background-color: var(--material);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  /* Hairline separators, like UIKit's 1-device-pixel lines */
+  .hairline-b { box-shadow: inset 0 -0.5px 0 var(--separator); }
+  .hairline-t { box-shadow: inset 0 0.5px 0 var(--separator); }
+
+  /* Inset grouped list rows: separators start at the text, not the cell edge */
+  .grouped-list > * + * {
+    position: relative;
+  }
+  .grouped-list > * + *::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: var(--inset, 16px);
+    height: 0.5px;
+    background: var(--separator);
+  }
+
+  /* Native disclosure in <details>: hide the browser marker, rotate our chevron */
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] > summary .disclosure { transform: rotate(90deg); }
 }
 
-.bg-animated {
+/* Respect Reduce Motion everywhere */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Rich text from the CMS (project write-ups and the About text)
+   ========================================================================== */
+
+.rich-text {
+  @apply text-body text-label;
+  overflow-wrap: anywhere;
+}
+.rich-text > * + * { margin-top: 1em; }
+.rich-text h1, .rich-text h2 { @apply text-title2 font-bold; margin-top: 1.6em; }
+.rich-text h3, .rich-text h4 { @apply text-title3 font-semibold; margin-top: 1.4em; }
+.rich-text p:empty, .rich-text p:has(> br:only-child) { display: none; }
+.rich-text strong { font-weight: 600; }
+.rich-text a {
+  color: rgb(var(--tint));
+  text-decoration: none;
+}
+.rich-text a:hover { text-decoration: underline; }
+.rich-text ul, .rich-text ol { padding-left: 1.25em; }
+.rich-text ul { list-style: disc; }
+.rich-text ol { list-style: decimal; }
+.rich-text li + li { margin-top: 0.4em; }
+.rich-text li::marker { color: var(--label2); }
+.rich-text blockquote {
+  border-left: 3px solid var(--separator);
+  padding-left: 1em;
+  color: var(--label2);
+}
+.rich-text code {
+  @apply font-mono;
+  font-size: 0.88em;
+  background: var(--fill);
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+}
+.rich-text pre {
+  @apply font-mono text-footnote;
+  background: var(--fill);
+  padding: 16px;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+.rich-text pre code { background: none; padding: 0; }
+.rich-text img {
+  display: block;
+  max-width: 100% !important;
+  height: auto !important;
+  float: none !important;
+  margin: 0 auto;
+  border-radius: 12px;
+}
+.rich-text figure { margin-left: 0; margin-right: 0; text-align: center; }
+.rich-text figure.image { width: auto !important; }
+.rich-text figcaption {
+  @apply text-footnote;
+  color: var(--label2);
+  margin-top: 8px;
+}
+.rich-text .table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: 0 0 0 0.5px var(--separator);
+}
+.rich-text table {
+  @apply text-subhead;
+  width: 100%;
+  border-collapse: collapse;
+}
+.rich-text th, .rich-text td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 0.5px solid var(--separator);
+  vertical-align: top;
+}
+.rich-text th { font-weight: 600; background: var(--fill); }
+.rich-text tr:last-child td { border-bottom: 0; }
+.rich-text .video {
   position: relative;
-  /* overflow: hidden; is now handled inside App.jsx */
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
 }
+.rich-text .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
-.bg-animated::before,
-.bg-animated::after {
-  content: '';
-  position: absolute;
-  width: 300px;
-  height: 300px;
-  border-radius: 9999px;
-  filter: blur(60px);
-  z-index: -1;
-  animation: floatBlobs 12s ease-in-out infinite;
-}
+/* ==========================================================================
+   CKEditor (admin only): keep the editor light so content stays legible
+   ========================================================================== */
 
-.bg-animated::before {
-  top: -80px;
-  left: -60px;
-  background: rgba(59, 130, 246, 0.15);
-}
-
-.bg-animated::after {
-  bottom: -80px;
-  right: -60px;
-  background: rgba(34, 211, 238, 0.15);
-  animation-delay: 3s;
-}
-
-.dark .bg-animated::before {
-  background: rgba(59, 130, 246, 0.12);
-}
-
-.dark .bg-animated::after {
-  background: rgba(34, 211, 238, 0.12);
-}
-
-/**
- * CKEditor Rich Text Editor Styles
- */
 .editor-container .ck-editor__editable_inline {
   min-height: 400px;
-  color: #1f2937; /* Ensures text is always dark */
-  background-color: #ffffff; /* Sets a permanent white background */
-  caret-color: #1f2937; /* Makes the blinking cursor visible on the white background */
-}
-
-/*
- * --- [NEW] ---
- * Rules to force the CKEditor UI (toolbar, buttons) to a light theme
-*/
-.ck.ck-toolbar {
-  background: #f9fafb;
-  border-color: #e5e7eb;
-}
-.ck.ck-button__label {
   color: #1f2937;
+  background-color: #ffffff;
+  caret-color: #1f2937;
 }
-.ck.ck-icon,
-.ck-button__arrow {
-  color: #1f2937;
-}
+.ck.ck-toolbar { background: #f9fafb; border-color: #e5e7eb; }
+.ck.ck-button__label, .ck.ck-icon, .ck-button__arrow { color: #1f2937; }
 .ck.ck-button:not(.ck-disabled):hover,
-a.ck.ck-button:not(.ck-disabled):hover {
-  background: #f3f4f6;
-}
-.ck.ck-button.ck-on,
-a.ck.ck-button.ck-on {
-  background: #e5e7eb;
-}
-/* --- [END NEW] --- */
-
-
+a.ck.ck-button:not(.ck-disabled):hover { background: #f3f4f6; }
+.ck.ck-button.ck-on, a.ck.ck-button.ck-on { background: #e5e7eb; }
 .ck-editor__editable_inline ol,
 .ck-editor__editable_inline ul {
   list-style: revert;
   padding-left: revert;
   margin-left: revert;
 }
-
-/* ==========================================================================
-   4. SPACING OVERRIDES (DEVELOPER NOTE)
-   ========================================================================== */
-
-main {
-  padding-top: 1rem;
-  padding-bottom: 0;
-}
-
-main section {
-  margin-bottom: 0;
-}
-main section + section {
-  margin-top: 1.25rem;
-}
-
-main .py-8 { padding-top: 1rem; padding-bottom: 1rem; }
-main .py-10 { padding-top: 1.25rem; padding-bottom: 1.25rem; }
-main .md\:py-12 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-main .md\:py-14 { padding-top: 1.75rem; padding-bottom: 1.75rem; }
-
-main .space-y-12 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
-main .space-y-10 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
-
-main .mt-10 {
-  margin-top: 1.25rem;
-}
-
-/* ==========================================================================
-   CUSTOM STYLES FOR CKEDITOR RICH TEXT CONTENT (.prose)
-   ADD THIS TO THE BOTTOM OF YOUR index.css FILE
-   ========================================================================== */
-
-/* --- Tables --- */
-/* We use standard CSS for borders to ensure they override prose defaults */
-.project-content .prose table {
-  @apply w-full my-8 text-sm shadow-md rounded-lg;
-  border-collapse: collapse;
-  overflow: hidden; /* Ensures the border radius is applied to the table */
-}
-.project-content .prose thead {
-  @apply bg-slate-100;
-}
-.project-content .prose th,
-.project-content .prose td {
-  @apply p-4 text-left;
-  border: 1px solid #e2e8f0; /* slate-200 */
-}
-.project-content .prose th {
-  @apply font-semibold text-slate-800;
-}
-/* Dark mode styles for tables */
-.dark .project-content .prose thead {
-  @apply bg-slate-800;
-}
-.dark .project-content .prose th,
-.dark .project-content .prose td {
-  border-color: #334155; /* slate-700 */
-}
-.dark .project-content .prose th {
-  @apply text-slate-200;
-}
-
-
-/* --- Responsive Media Embeds (YouTube, Vimeo, etc.) --- */
-/* This creates a responsive container with a 16:9 aspect ratio */
-.project-content .prose figure.media {
-  @apply relative w-full overflow-hidden rounded-xl shadow-lg my-8;
-  padding-top: 56.25%; /* This percentage creates the 16:9 aspect ratio */
-}
-/* The iframe is positioned to fill the container perfectly */
-.project-content .prose figure.media iframe {
-  @apply absolute top-0 left-0 w-full h-full border-0;
-}
-
-/* =============================
-   SUPER BRUTE-FORCE: center ANY CKEditor image
-   Put this at the very bottom of index.css
-   ============================= */
-
-/* Target all images, picture, figure combos inside project-content .prose */
-.project-content .prose img,
-.project-content .prose picture,
-.project-content .prose figure,
-.project-content .prose p > img,
-.project-content .prose a > img,
-.project-content .prose figure.image img,
-.project-content .prose .ck-align-center img,
-.project-content .prose img[align],
-.project-content .prose img[style*="float"] {
-  display: block !important;
-  float: none !important;            /* remove float if present inline or from classes */
-  margin-left: auto !important;
-  margin-right: auto !important;
-  margin-top: 0 !important;
-  margin-bottom: 0.75rem !important; /* optional spacing */
-  max-width: 100% !important;
-  width: auto !important;
-  clear: both !important;
-  vertical-align: middle !important;
-}
-
-/* Ensure figures themselves center their content */
-.project-content .prose figure,
-.project-content .prose figure.image {
-  display: block !important;
-  width: 100% !important;
-  text-align: center !important;
-  justify-content: center !important; /* in case some rule made it flex */
-  align-items: center !important;
-  margin: 0 auto !important;
-  padding: 0 !important;
-}
-
-/* Anchor-wrapped images */
-.project-content .prose a > img {
-  display: block !important;
-  margin: 0 auto !important;
-  float: none !important;
-}
-
-/* If CKEditor used classes like ck-align-left/right/center, normalize them */
-.project-content .prose .ck-align-left,
-.project-content .prose .ck-align-right,
-.project-content .prose .ck-align-center {
-  text-align: center !important;
-}
-
-/* figcaption style */
-.project-content .prose figure.image figcaption {
-  text-align: center !important;
-  margin-top: 0.5rem !important;
-  font-style: italic !important;
-  color: inherit !important;
-}
-

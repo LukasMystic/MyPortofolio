@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Routes, Route, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -16,6 +16,22 @@ import { TranslationProvider } from './context/TranslationContext';
 import GamePage from './pages/GamePage';
 import NotFoundPage from './pages/NotFoundPage';
 
+// The admin screens predate the redesign and bring their own styling, so they
+// keep the padded container they were built for.
+const AdminLayout = () => (
+  <div className="container mx-auto px-4 pb-24 pt-6 md:pb-10">
+    <Outlet />
+  </div>
+);
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -29,7 +45,7 @@ function App() {
     }
     setLoading(false);
   }, []);
-  
+
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     delete axios.defaults.headers.common['Authorization'];
@@ -41,30 +57,27 @@ function App() {
 
   return (
     <TranslationProvider>
-      <div className="min-h-screen flex flex-col font-sans bg-gray-50 text-slate-800 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
+      <ScrollToTop />
+      <div className="flex min-h-screen flex-col bg-grouped text-label">
         <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
-        
-        <main className="flex-grow container mx-auto px-4 pt-4 relative overflow-hidden">
-          {/* Animated background is contained here and won't affect the header */}
-          <div className="absolute inset-0 bg-animated -z-10" />
 
+        <main id="main" className="flex-grow">
           <Routes>
-            {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/project/:id" element={<ProjectDetailPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/games" element={<GamePage />} />
-            <Route path="/login" element={<LoginPage setAuth={setIsAuthenticated} />} />
-            
-            {/* Protected Admin Routes */}
-            <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/admin/cv" element={<ManageCvPage />} />
-              <Route path="/admin/project/edit/:id" element={<EditProjectPage />} />
+
+            <Route element={<AdminLayout />}>
+              <Route path="/login" element={<LoginPage setAuth={setIsAuthenticated} />} />
+              <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin/cv" element={<ManageCvPage />} />
+                <Route path="/admin/project/edit/:id" element={<EditProjectPage />} />
+              </Route>
             </Route>
 
-            {/* Catch-all 404 Route */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>

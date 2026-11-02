@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { ActivityIndicator } from '../components/ui';
 
 const TranslationContext = createContext();
 
@@ -110,8 +111,8 @@ export const TranslationProvider = ({ children }) => {
   // This prevents the page from flashing empty or untranslated content on first load.
   if (!translatedContent) {
     return (
-      <div className="flex h-screen items-center justify-center bg-white dark:bg-slate-900">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-500" />
+      <div className="flex h-screen items-center justify-center bg-grouped">
+        <ActivityIndicator />
       </div>
     );
   }

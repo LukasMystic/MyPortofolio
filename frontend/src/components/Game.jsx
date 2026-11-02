@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { SegmentedControl } from "./ui";
 
 export default function Game() {
   const size = 6; // 6x6 grid
@@ -355,137 +356,87 @@ export default function Game() {
     return best !== undefined ? best : (empties.length ? empties[0] : -1);
   }
 
+  const status = winner
+    ? winner === 'Draw'
+      ? 'Draw.'
+      : `${winner} wins.`
+    : isThinking
+      ? 'Thinking…'
+      : `${isXNext ? 'X' : 'O'} to move`;
+
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
-      {/* Local keyframes */}
+    <div className="mx-auto w-full max-w-md">
       <style>{`
-        @keyframes popIn { 0% { transform: scale(0.85); opacity: 0; } 60% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); } }
-        @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4) } 50% { box-shadow: 0 0 0 8px rgba(59,130,246,0) } }
-        @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
-        .thinking:after { content: ''; animation: dots 1.2s steps(3,end) infinite; }
-        .cell-pop { animation: popIn 200ms ease-out; }
-        .modal-pop { animation: popIn 240ms ease-out; }
+        @keyframes cellIn { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes alertIn { from { transform: scale(1.1); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .cell-in { animation: cellIn 160ms cubic-bezier(0.25, 0.1, 0.25, 1); }
+        .alert-in { animation: alertIn 200ms cubic-bezier(0.25, 0.1, 0.25, 1); }
       `}</style>
 
-      <div className="w-full max-w-md mx-auto">
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-slate-100 mb-6 text-center">
-          Tic Tac Toe 6×6
-        </h1>
-        <p className="text-sm md:text-base text-center text-slate-600 dark:text-slate-400 mb-6">
-          Get 4 in a row to win!
-        </p>
-
-        {/* Decorative glow behind grid */}
-        <div className="relative flex justify-center mb-6">
-          <div className="pointer-events-none absolute -z-10 h-48 w-48 md:h-64 md:w-64 rounded-full bg-blue-400/20 blur-3xl" />
-
-          {/* Responsive grid container */}
-          <div className="w-full max-w-sm md:max-w-md lg:max-w-lg">
-            <div className="grid grid-cols-6 gap-1 md:gap-2 w-full aspect-square">
-              {board.map((cell, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleCellClick(i)}
-                  disabled={blocked.includes(i) || !!winner || isThinking}
-                  className={`
-                    aspect-square w-full rounded-md border transition-all duration-150
-                    flex items-center justify-center
-                    text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl font-bold
-                    ${
-                      blocked.includes(i)
-                        ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600 dark:border-slate-700'
-                        : cell
-                        ? 'bg-white text-slate-900 border-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700 cell-pop shadow-sm'
-                        : 'bg-slate-50 text-slate-900 border-slate-200 hover:bg-white hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700 dark:hover:bg-slate-800'
-                    }
-                  `}
-                  aria-label={`cell-${i}`}
-                >
-                  {cell || (blocked.includes(i) ? "✖" : "")}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="text-center mb-6">
-          {winner ? (
-            winner === "Draw" ? (
-              <p className="text-lg md:text-xl font-semibold text-slate-700 dark:text-slate-200">It's a Draw! 🤝</p>
-            ) : (
-              <p className="text-lg md:text-xl font-semibold text-slate-700 dark:text-slate-200">
-                Winner: <span className="text-2xl">{winner}</span> 🎉
-              </p>
-            )
-          ) : (
-            <p className="text-base md:text-lg text-slate-700 dark:text-slate-300">
-              {isThinking ? (
-                <span className="thinking">AI is thinking</span>
-              ) : (
-                <>
-                  Next Turn: <span className="font-semibold text-xl">{isXNext ? "X" : "O"}</span>
-                </>
-              )}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
-          <button
-            onClick={() => resetGame("pvp")}
-            className={`w-full sm:w-auto rounded-full px-6 py-3 text-sm md:text-base font-semibold shadow transition-all duration-200 ${
-              gameMode === 'pvp'
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                : 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
-            }`}
-          >
-            👥 2 Players
-          </button>
-          <button
-            onClick={() => resetGame("pve")}
-            className={`w-full sm:w-auto rounded-full px-6 py-3 text-sm md:text-base font-semibold shadow transition-all duration-200 ${
-              gameMode === 'pve'
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg'
-                : 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
-            }`}
-          >
-            🤖 vs AI
-          </button>
-          <button
-            onClick={() => resetGame(gameMode)}
-            className="w-full sm:w-auto rounded-full bg-emerald-500 px-6 py-3 text-sm md:text-base font-semibold text-white shadow hover:bg-emerald-600 transition-all duration-200"
-          >
-            🔄 Restart
-          </button>
-        </div>
-
-        <p className="text-xs md:text-sm text-center text-slate-500 dark:text-slate-400 px-4">
-          💡 Some cells are blocked (✖) each game for extra challenge! AI is tuned to be extremely strong but still beatable with careful play.
-        </p>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <SegmentedControl
+          label="Game mode"
+          value={gameMode}
+          onChange={(m) => resetGame(m)}
+          options={[
+            { value: 'pve', label: 'vs Computer' },
+            { value: 'pvp', label: 'Two players' },
+          ]}
+        />
+        <button
+          type="button"
+          onClick={() => resetGame(gameMode)}
+          className="inline-flex min-h-[44px] items-center rounded-full px-3 text-callout font-medium text-tint hover:bg-fill"
+        >
+          Restart
+        </button>
       </div>
 
+      <div className="grid aspect-square w-full grid-cols-6 gap-1.5" role="grid" aria-label="Board">
+        {board.map((cell, i) => {
+          const isBlocked = blocked.includes(i);
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleCellClick(i)}
+              disabled={isBlocked || !!winner || isThinking}
+              aria-label={isBlocked ? `Cell ${i + 1}, blocked` : cell ? `Cell ${i + 1}, ${cell}` : `Cell ${i + 1}, empty`}
+              className={`flex aspect-square w-full items-center justify-center rounded-[10px] text-title3 font-semibold transition-colors duration-150 ${
+                isBlocked
+                  ? 'cursor-not-allowed bg-label/[0.06] text-label3 dark:bg-white/[0.04]'
+                  : cell
+                    ? 'bg-fill'
+                    : 'bg-fill hover:bg-fill2'
+              } ${lastMove === i ? 'ring-2 ring-tint/50' : ''}`}
+            >
+              {isBlocked ? (
+                <span aria-hidden="true" className="text-callout">×</span>
+              ) : cell ? (
+                <span className={`cell-in ${cell === 'X' ? 'text-tint' : 'text-[#C93400] dark:text-[#FF9F0A]'}`}>{cell}</span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="mt-4 text-center text-callout font-medium" role="status">{status}</p>
+      <p className="mt-2 text-center text-footnote text-label2">
+        Four in a row wins. A few cells are blocked each game. The computer searches four moves ahead, so it is strong but beatable.
+      </p>
+
       {winner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="modal-pop relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white/90 p-6 text-center shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/90">
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 h-24 w-24 rounded-full bg-gradient-to-tr from-blue-500 via-cyan-400 to-emerald-400 opacity-60 blur" />
-            <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">
-              {winner === 'Draw' ? "It's a Draw! 🤝" : `${winner} Wins! 🎉`}
-            </h2>
-            <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 mb-6">
-              {winner === 'Draw' ? 'Great match!' : 'Congratulations!'} Want to play again?
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={() => resetGame(gameMode)}
-                className="rounded-full bg-emerald-500 px-6 py-3 text-sm md:text-base font-semibold text-white shadow hover:bg-emerald-600 transition-all duration-200"
-              >
-                🔄 Play Again
-              </button>
-              <button
-                onClick={() => resetGame('pvp')}
-                className="rounded-full border border-slate-200 bg-white/80 px-6 py-3 text-sm md:text-base font-semibold text-slate-700 shadow-sm hover:bg-white dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200 transition-all duration-200"
-              >
-                👥 2 Players
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4" role="alertdialog" aria-modal="true" aria-labelledby="game-alert-title">
+          <div className="alert-in material-bar w-[270px] overflow-hidden rounded-[14px] text-center">
+            <div className="px-4 pb-4 pt-5">
+              <h2 id="game-alert-title" className="text-headline font-semibold">
+                {winner === 'Draw' ? 'Draw' : `${winner} Wins`}
+              </h2>
+              <p className="mt-1 text-footnote text-label">Play another round?</p>
+            </div>
+            <div className="hairline-t flex">
+              <button type="button" onClick={() => resetGame(gameMode)} className="min-h-[44px] flex-1 text-body font-semibold text-tint hover:bg-fill" autoFocus>
+                Play Again
               </button>
             </div>
           </div>
