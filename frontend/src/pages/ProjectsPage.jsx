@@ -3,6 +3,8 @@ import { useTranslation } from '../context/TranslationContext';
 import SEO from '../components/SEO';
 import ProjectCard from '../components/ProjectCard';
 import AcademyApps from '../components/AcademyApps';
+import ResearchList from '../components/ResearchList';
+import { Reveal } from '../components/motion';
 import { Page, LargeTitle, Section, SegmentedControl, ActivityIndicator } from '../components/ui';
 
 const ProjectsPage = () => {
@@ -33,24 +35,17 @@ const ProjectsPage = () => {
         imageUrl={content.cv?.profilePictureUrl}
       />
 
-      <LargeTitle
-        title="Work"
-        subtitle="Apps for Apple platforms, machine learning research, and the web products around them."
-      />
+      <LargeTitle title="Work" />
 
       <Section id="apple" title="Apple platforms">
         <AcademyApps />
       </Section>
 
-      <Section
-        id="projects"
-        title="Research and web"
-        action={
-          <span className="hidden text-subhead text-label2 sm:inline">
-            {projects.length} project{projects.length === 1 ? '' : 's'}
-          </span>
-        }
-      >
+      <Section id="research" title="Research">
+        <ResearchList />
+      </Section>
+
+      <Section id="projects" title="Projects">
         <SegmentedControl
           label="Sort projects"
           className="mb-4"
@@ -63,9 +58,11 @@ const ProjectsPage = () => {
           ]}
         />
         {projects.length ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => (
-              <ProjectCard key={p._id} project={p} />
+          <div key={sortOrder} className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
+            {projects.map((p, i) => (
+              <Reveal key={p._id} index={i % 3}>
+                <ProjectCard project={p} />
+              </Reveal>
             ))}
           </div>
         ) : (

@@ -15,6 +15,7 @@ import ContactPage from './pages/ContactPage';
 import { TranslationProvider } from './context/TranslationContext';
 import GamePage from './pages/GamePage';
 import NotFoundPage from './pages/NotFoundPage';
+import AboutPage from './pages/AboutPage';
 
 // The admin screens predate the redesign and bring their own styling, so they
 // keep the padded container they were built for.
@@ -33,6 +34,7 @@ const ScrollToTop = () => {
 };
 
 function App() {
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -61,10 +63,12 @@ function App() {
       <div className="flex min-h-screen flex-col bg-grouped text-label">
         <Header isAuthenticated={isAuthenticated} onLogout={handleLogout} />
 
-        <main id="main" className="flex-grow">
+        {/* Keyed on the path so each page plays its short settle-in on navigation. */}
+        <main id="main" key={location.pathname} className="page-in flex-grow">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="/project/:id" element={<ProjectDetailPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/games" element={<GamePage />} />

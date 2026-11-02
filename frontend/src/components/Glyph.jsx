@@ -73,6 +73,13 @@ const paths = {
     </>
   ),
   checkmark: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  xmark: <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />,
+  person: (
+    <>
+      <circle cx="12" cy="8.25" r="3.75" />
+      <path d="M4.75 20c.9-3.6 3.8-5.75 7.25-5.75s6.35 2.15 7.25 5.75" />
+    </>
+  ),
   'exclamationmark.circle': (
     <>
       <circle cx="12" cy="12" r="8.5" />

@@ -110,6 +110,92 @@
   details[open] > summary .disclosure { transform: rotate(90deg); }
 }
 
+/* ==========================================================================
+   Motion
+   One curve and a few durations, as in UIKit: 0.2s for feedback, 0.35s for
+   things arriving, 0.5s for things travelling across the screen.
+   ========================================================================== */
+
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.32, 1.25, 0.5, 1);
+}
+
+/* Scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s var(--ease-out), transform 0.7s var(--ease-out);
+}
+.reveal.is-in { opacity: 1; transform: none; }
+
+/* Route change: the new page settles in */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.page-in { animation: page-in 0.45s var(--ease-out) both; }
+
+/* Hero lines rise in one after another on first load */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(0.35em); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+.rise { animation: rise 0.9s var(--ease-out) both; }
+
+/* Press feedback: tappable cards shrink slightly, like UIKit's highlighted state */
+.pressable {
+  transition: transform 0.35s var(--ease-spring), background-color 0.2s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.pressable:active { transform: scale(0.97); transition-duration: 0.12s; }
+@media (hover: hover) {
+  .lift { transition: transform 0.45s var(--ease-out), box-shadow 0.45s var(--ease-out); }
+  .lift:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08); }
+  .dark .lift:hover { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
+  .lift:hover .lift-img { transform: scale(1.03); }
+}
+.lift-img { transition: transform 0.7s var(--ease-out); }
+
+/* Disclosure height */
+.collapse-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.4s var(--ease-out), opacity 0.3s ease;
+}
+.collapse-grid.is-open { grid-template-rows: 1fr; opacity: 1; }
+
+/* Sheet: from the bottom edge on phones, scale-in on larger screens */
+.sheet-panel {
+  transform: translateY(100%);
+  transition: transform 0.42s var(--ease-out), opacity 0.3s ease;
+}
+.sheet-panel.is-in { transform: none; }
+@media (min-width: 768px) {
+  .sheet-panel { transform: scale(0.94); opacity: 0; }
+  .sheet-panel.is-in { transform: none; opacity: 1; }
+}
+
+/* Tab bar icon bounce when a tab becomes active */
+@keyframes symbol-bounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(0.82); }
+  70% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.tab-active svg { animation: symbol-bounce 0.45s var(--ease-out); }
+
+/* Horizontal shelf, like App Store rows */
+.shelf {
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--shelf-pad, 16px);
+  scrollbar-width: none;
+}
+.shelf::-webkit-scrollbar { display: none; }
+.shelf > * { scroll-snap-align: start; }
+
 /* Respect Reduce Motion everywhere */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -118,6 +204,8 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  .reveal { opacity: 1; transform: none; }
+  .rise { filter: none; }
 }
 
 /* ==========================================================================
@@ -138,11 +226,53 @@
   text-decoration: none;
 }
 .rich-text a:hover { text-decoration: underline; }
-.rich-text ul, .rich-text ol { padding-left: 1.25em; }
-.rich-text ul { list-style: disc; }
-.rich-text ol { list-style: decimal; }
-.rich-text li + li { margin-top: 0.4em; }
-.rich-text li::marker { color: var(--label2); }
+/* Lists render as an inset grouped list, not bullets. A leading bold phrase
+   ("Automated Data Scraping: ...") becomes the row title. */
+.rich-text ul,
+.rich-text ol {
+  list-style: none;
+  padding: 0;
+  border-radius: 14px;
+  background: var(--fill);
+  overflow: hidden;
+}
+.rich-text li {
+  position: relative;
+  padding: 12px 16px;
+  color: var(--label2);
+}
+.rich-text li + li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 0;
+  height: 0.5px;
+  background: var(--separator);
+}
+.rich-text li > strong:first-child {
+  display: block;
+  color: rgb(var(--label));
+  font-weight: 600;
+}
+.rich-text ol { counter-reset: step; }
+.rich-text ol > li { padding-left: 48px; counter-increment: step; }
+.rich-text ol > li::after {
+  content: counter(step);
+  position: absolute;
+  left: 16px;
+  top: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgb(var(--tint-fill));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 22px;
+  text-align: center;
+}
+.rich-text ol > li + li::before { left: 48px; }
 .rich-text blockquote {
   border-left: 3px solid var(--separator);
   padding-left: 1em;

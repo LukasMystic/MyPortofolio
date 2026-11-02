@@ -49,6 +49,11 @@ const useNormalisedContent = (ref, html) => {
       if (!p.querySelector('img, iframe, video') && !p.textContent.replace(/\u00a0/g, '').trim()) p.remove();
     });
 
+    // List rows: "Title:" becomes a row title, so the colon is no longer needed.
+    root.querySelectorAll('li > strong:first-child').forEach((el) => {
+      el.textContent = el.textContent.replace(/\s*:\s*$/, '');
+    });
+
     root.querySelectorAll('img').forEach((img) => {
       img.loading = 'lazy';
       img.removeAttribute('align');

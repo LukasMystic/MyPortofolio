@@ -129,28 +129,46 @@ export const Button = ({ to, href, variant = 'filled', children, className = '',
   return <button className={cls} {...rest}>{children}</button>;
 };
 
-// UISegmentedControl: one choice from a small, fixed set.
-export const SegmentedControl = ({ options, value, onChange, label, className = '' }) => (
-  <div role="radiogroup" aria-label={label} className={`inline-flex rounded-[9px] bg-fill p-[2px] ${className}`}>
-    {options.map((opt) => {
-      const selected = opt.value === value;
-      return (
-        <button
-          key={opt.value}
-          type="button"
-          role="radio"
-          aria-checked={selected}
-          onClick={() => onChange(opt.value)}
-          className={`min-h-[32px] rounded-[7px] px-3.5 text-footnote font-medium transition duration-200 ease-ios sm:px-4 ${
-            selected ? 'bg-bg text-label shadow-[0_3px_8px_rgba(0,0,0,0.12),0_3px_1px_rgba(0,0,0,0.04)] dark:bg-elevated2' : 'text-label hover:text-label2'
-          }`}
-        >
-          {opt.label}
-        </button>
-      );
-    })}
-  </div>
-);
+// UISegmentedControl: one choice from a small, fixed set. Equal-width segments
+// with a thumb that slides to the selection.
+export const SegmentedControl = ({ options, value, onChange, label, className = '' }) => {
+  const index = Math.max(0, options.findIndex((o) => o.value === value));
+  return (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={`relative inline-grid rounded-[9px] bg-fill p-[2px] ${className}`}
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+    >
+      <span
+        aria-hidden="true"
+        className="absolute bottom-[2px] left-[2px] top-[2px] rounded-[7px] bg-bg shadow-[0_3px_8px_rgba(0,0,0,0.12),0_3px_1px_rgba(0,0,0,0.04)] transition-transform duration-300 dark:bg-elevated2"
+        style={{
+          width: `calc((100% - 4px) / ${options.length})`,
+          transform: `translateX(${index * 100}%)`,
+          transitionTimingFunction: 'var(--ease-out)',
+        }}
+      />
+      {options.map((opt) => {
+        const selected = opt.value === value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(opt.value)}
+            className={`relative min-h-[32px] whitespace-nowrap px-3.5 text-footnote transition-[font-weight,color] duration-200 sm:px-4 ${
+              selected ? 'font-semibold text-label' : 'font-medium text-label2 hover:text-label'
+            }`}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 export const Tag = ({ children }) => (
   <span className="inline-flex items-center rounded-full bg-fill px-2.5 py-0.5 text-footnote text-label2">{children}</span>

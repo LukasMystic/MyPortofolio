@@ -19,6 +19,7 @@ const languages = [
 const tabs = [
   { to: '/', label: 'Home', icon: 'house', end: true },
   { to: '/projects', label: 'Work', icon: 'square.grid' },
+  { to: '/about', label: 'About', icon: 'person' },
   { to: '/contact', label: 'Contact', icon: 'bubble' },
 ];
 
@@ -94,8 +95,22 @@ const navLinkClass = ({ isActive }) =>
     isActive ? 'font-semibold text-label' : 'text-label2 hover:text-label'
   }`;
 
+// Like a large-title navigation bar: transparent at the top of the page, the
+// material and hairline fade in once content scrolls underneath.
+const useScrolled = () => {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  return scrolled;
+};
+
 const Header = ({ isAuthenticated, onLogout }) => {
   const [theme, toggleTheme] = useTheme();
+  const scrolled = useScrolled();
   const { content } = useTranslation();
   const name = content?.cv?.fullName || 'Stanley Pratama Teguh';
   const tabItems = isAuthenticated ? [...tabs, { to: '/admin', label: 'Admin', icon: 'doc.text' }] : tabs;
@@ -110,7 +125,11 @@ const Header = ({ isAuthenticated, onLogout }) => {
       </a>
 
       {/* Navigation bar */}
-      <header className="material-bar hairline-b sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
+      <header
+        className={`sticky top-0 z-50 pt-[env(safe-area-inset-top)] transition-[background-color,box-shadow,backdrop-filter] duration-300 ${
+          scrolled ? 'material-bar hairline-b' : 'bg-grouped'
+        }`}
+      >
         <nav aria-label="Primary" className="mx-auto flex h-[52px] max-w-content items-center gap-1 px-2 sm:px-4">
           <Link to="/" className="flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-full px-2 text-headline font-semibold">
             {content?.cv?.profilePictureUrl && (
@@ -163,8 +182,8 @@ const Header = ({ isAuthenticated, onLogout }) => {
                 to={t.to}
                 end={t.end}
                 className={({ isActive }) =>
-                  `flex h-[50px] flex-col items-center justify-center gap-0.5 text-[10px] font-medium tracking-[0.01em] ${
-                    isActive ? 'text-tint' : 'text-label3'
+                  `flex h-[50px] flex-col items-center justify-center gap-0.5 text-[10px] font-medium tracking-[0.01em] transition-colors duration-200 ${
+                    isActive ? 'tab-active text-tint' : 'text-label3'
                   }`
                 }
               >

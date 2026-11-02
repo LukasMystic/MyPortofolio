@@ -7,13 +7,23 @@
 // fact here is taken from the GitHub profile README.
 
 export const profile = {
-  headline: 'I build machine learning systems, and the apps people use them through.',
-  intro:
-    'Computer Science at BINUS University, Research Assistant across NLP and computer vision, and a Junior iOS Developer at the Apple Developer Academy, where my recent work is in Swift: augmented reality, real-time simulation and learning apps for iPhone and iPad.',
+  // Hero: two short lines, nothing more.
+  headline: 'Machine learning,\nmade into apps.',
+  intro: 'AI engineer and iOS developer at the Apple Developer Academy.',
   role: 'AI engineer and iOS developer',
-  availability: 'Open to AI/ML engineering, data science and full-stack roles.',
+  availability: 'Open to AI/ML, data science and full-stack roles.',
   portfolioUrl: 'https://stanleypt.vercel.app',
+  // Longer version, used on the About page and in meta descriptions.
+  bio: 'I build machine learning systems and the software around them: the model, the API, the interface, and the thing that finally ships. Computer Science at BINUS University, Research Assistant across NLP and computer vision, and a Junior iOS Developer at the Apple Developer Academy.',
 };
+
+// Big numbers, small labels. From the GitHub profile README.
+export const stats = [
+  { value: 4, suffix: '+', label: 'Papers accepted' },
+  { value: 3, suffix: '', label: 'Apps for iPhone and iPad' },
+  { value: 100, suffix: 'K+', label: 'Samples in research datasets' },
+  { value: 191, suffix: '', label: 'Learners trained' },
+];
 
 export const now = [
   { label: 'Apple Developer Academy @ BINUS', detail: 'Junior iOS Developer, Cohort 9' },
@@ -39,7 +49,7 @@ export const academyApps = [
   {
     name: 'Cubby',
     category: 'Kids · Storybook game',
-    summary: 'A storybook game about consent and personal boundaries.',
+    summary: 'A storybook game about consent.',
     description:
       'A page-curl storybook leads into a small world you walk with a joystick, where each character tells you how they like to be greeted.',
     frameworks: ['SwiftUI', 'SpriteKit', 'AVFoundation', 'TipKit'],
@@ -62,7 +72,7 @@ export const academyApps = [
 
 export const research = [
   {
-    title: 'MSLSAM — prompt-injection detection from hidden states',
+    title: 'Prompt-injection detection from hidden states',
     venue: 'Undergraduate thesis',
     description:
       "Catching prompt injection by reading an LLM's own hidden states during the forward pass it already runs. Every version is pre-registered and evaluated against an adaptive attacker, with attack success checked on real generations.",
@@ -70,22 +80,22 @@ export const research = [
     url: 'https://github.com/LukasMystic/MSLSAM',
   },
   {
-    title: 'Poverty clusters across Java’s 119 regencies',
-    venue: 'Two papers · ICoDiT 2026, Springer CCIS',
+    title: 'Poverty clusters across Java’s regencies',
+    venue: 'ICoDiT 2026 · Springer CCIS · two papers',
     description:
       'How the choice of spatial neighbours and permutation count changes which poverty clusters you find. Every table reproduces byte for byte from one script.',
     stack: 'R · spatial statistics',
     url: 'https://github.com/LukasMystic/java-poverty-lisa-sensitivity',
   },
   {
-    title: 'Stacking ensemble for sentiment analysis',
-    venue: 'ICCSCI 2025 · Elsevier Procedia Computer Science',
+    title: 'Stacking ensembles for sentiment analysis',
+    venue: 'ICCSCI 2025 · Elsevier',
     description: 'Research I led: a stacking ensemble that raises decision-tree accuracy on sentiment classification.',
     stack: 'scikit-learn · TF-IDF · SMOTE',
     url: 'https://www.sciencedirect.com/science/article/pii/S1877050925027139',
   },
   {
-    title: 'Building damage detection from satellite imagery',
+    title: 'Building damage from satellite imagery',
     venue: 'Doctoral research team',
     description: 'Post-disaster segmentation and damage classification on Maxar imagery. 95.3% peak footprint accuracy.',
     stack: 'TensorFlow · U-Net · Attention · SAM',
